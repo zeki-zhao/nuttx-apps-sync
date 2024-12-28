@@ -1,0 +1,1 @@
+int fboverlay_main(int argc, char *argv[]);
