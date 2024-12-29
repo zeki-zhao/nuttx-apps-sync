@@ -1,0 +1,1 @@
+int mytouch_main(int argc, char *argv[]);
