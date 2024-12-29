@@ -1,0 +1,1 @@
+{ "myled", 100, 2048, myled_main },

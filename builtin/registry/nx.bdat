@@ -1,0 +1,1 @@
+{ "nx", SCHED_PRIORITY_DEFAULT, 2048, nx_main },
