@@ -1,1 +1,1 @@
-{ "mytouch", 100, 2048, mytouch_main },
+{ "mytouch", 100, 4096, mytouch_main },

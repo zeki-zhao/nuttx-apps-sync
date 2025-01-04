@@ -21,7 +21,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
+#include <nuttx/config.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -44,6 +44,9 @@
 #define TEST_SHOW_DIRECTORIES 1
 #define TEST_USE_STATFS       1
 
+#define test 1
+#define Origin 0
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -56,21 +59,21 @@ static const char g_mntdir[]         = "/mnt";
 static const char g_target[]         = "/mnt/fs";
 static const char g_filesystemtype[] = "vfat";
 
-static const char g_testdir1[]       = "/mnt/fs/TestDir";
-static const char g_testdir2[]       = "/mnt/fs/NewDir1";
+// static const char g_testdir1[]       = "/mnt/fs/TestDir";
+// static const char g_testdir2[]       = "/mnt/fs/NewDir1";
 static const char g_testdir3[]       = "/mnt/fs/NewDir2";
 static const char g_testdir4[]       = "/mnt/fs/NewDir3";
 #ifdef CONFIG_EXAMPLES_MOUNT_DEVNAME
-static const char g_testfile1[]      = "/mnt/fs/TestDir/TestFile.txt";
+// static const char g_testfile1[]      = "/mnt/fs/TestDir/TestFile.txt";
 #endif
-static const char g_testfile2[]      = "/mnt/fs/TestDir/WrTest1.txt";
-static const char g_testfile3[]      = "/mnt/fs/NewDir1/WrTest2.txt";
+// static const char g_testfile2[]      = "/mnt/fs/TestDir/WrTest1.txt";
+// static const char g_testfile3[]      = "/mnt/fs/NewDir1/WrTest2.txt";
 static const char g_testfile4[]      = "/mnt/fs/NewDir3/Renamed.txt";
-static const char g_testmsg[]        = "This is a write test";
+static const char g_testmsg[]        = "Hello,zeki";
 
 static int        g_nerrors          = 0;
 
-static char       g_namebuffer[256];
+static char       g_namebuffer[128]; //256
 
 /****************************************************************************
  * Public Data
@@ -161,14 +164,14 @@ static void show_statfs(const char *path)
   if (ret == 0)
     {
       printf("show_statfs: statfs(%s) succeeded\n", path);
-      printf("\tFS Type           : %0" PRIx32 "\n", buf.f_type);
-      printf("\tBlock size        : %zd\n", buf.f_bsize);
-      printf("\tNumber of blocks  : %jd\n", (intmax_t)buf.f_blocks);
-      printf("\tFree blocks       : %jd\n", (intmax_t)buf.f_bfree);
-      printf("\tFree user blocks  : %jd\n", (intmax_t)buf.f_bavail);
-      printf("\tNumber file nodes : %jd\n", (intmax_t)buf.f_files);
-      printf("\tFree file nodes   : %jd\n", (intmax_t)buf.f_ffree);
-      printf("\tFile name length  : %zd\n", buf.f_namelen);
+      // printf("\tFS Type           : %0" PRIx32 "\n", buf.f_type);
+      // printf("\tBlock size        : %zd\n", buf.f_bsize);
+      // printf("\tNumber of blocks  : %jd\n", (intmax_t)buf.f_blocks);
+      // printf("\tFree blocks       : %jd\n", (intmax_t)buf.f_bfree);
+      // printf("\tFree user blocks  : %jd\n", (intmax_t)buf.f_bavail);
+      // printf("\tNumber file nodes : %jd\n", (intmax_t)buf.f_files);
+      // printf("\tFree file nodes   : %jd\n", (intmax_t)buf.f_ffree);
+      // printf("\tFile name length  : %zd\n", buf.f_namelen);
     }
   else
     {
@@ -598,13 +601,183 @@ static void succeed_stat(const char *path)
  * Name: mount_main
  ****************************************************************************/
 
+#if test
+int main(int argc, FAR char *argv[])
+{
+  // int temp[500] = {0};
+  int ret = 0;
+  // syslog(7,"in %s:%d\n",__func__,__LINE__);
+
+  /* Mount the test file system (see arch/sim/src/up_deviceimage.c */
+
+  printf("mount_main: mounting %s filesystem at target=%s with source=%s\n",g_filesystemtype, g_target, g_source);
+
+  ret = mount(g_source, g_target, g_filesystemtype, 0, NULL);
+  printf("mount_main: mount() returned %d\n", ret);
+
+  if (ret == 0)
+    {
+//       show_statfs(g_mntdir);
+//       show_statfs(g_target);
+
+//       /* Read a test file that is already on the test file system image */
+//       show_directories("", 0);
+//       succeed_stat(g_testfile1);
+//       show_statfs(g_testfile1);
+//       read_test_file(g_testfile1);
+
+//       /* Write a test file into a pre-existing directory on the test file
+//        * system
+//        */
+
+//       fail_stat(g_testfile2, ENOENT);
+//       write_test_file(g_testfile2);
+//       show_directories("", 0);
+//       succeed_stat(g_testfile2);
+//       show_statfs(g_testfile2);
+
+//       /* Read the file that we just wrote */
+
+//       read_test_file(g_testfile2);
+
+//       /* Try rmdir() against a file on the directory.  It should fail with
+//        * ENOTDIR
+//        */
+// #ifdef CONFIG_EXAMPLES_MOUNT_DEVNAME
+//       fail_rmdir(g_testfile1, ENOTDIR);
+// #endif
+
+//       /* Try rmdir() against the test directory.  It should fail with
+//        * ENOTEMPTY 
+//        */
+
+//       fail_rmdir(g_testdir1, ENOTEMPTY);
+
+//       /* Try unlink() against the test directory.  It should fail with
+//        * EISDIR
+//        */
+
+//       fail_unlink(g_testdir1, EISDIR);
+
+//       /* Try unlink() against the test file1.  It should succeed. */
+// #ifdef CONFIG_EXAMPLES_MOUNT_DEVNAME
+//       succeed_unlink(g_testfile1);
+//       fail_stat(g_testfile1, ENOENT);
+//       show_directories("", 0);
+// #endif
+
+//       /* Attempt to open testfile1 should fail with ENOENT */
+// #ifdef CONFIG_EXAMPLES_MOUNT_DEVNAME
+//       fail_read_open(g_testfile1, ENOENT);
+// #endif
+//       /* Try rmdir() against the test directory.  It should still fail with
+//        * ENOTEMPTY
+//        */
+
+//       fail_rmdir(g_testdir1, ENOTEMPTY);
+
+//       /* Try mkdir() against the test file2.  It should fail with EEXIST. */
+
+//       fail_mkdir(g_testfile2, EEXIST);
+
+//       /* Try unlink() against the test file2.  It should succeed. */
+
+//       succeed_unlink(g_testfile2);
+//       show_directories("", 0);
+//       fail_stat(g_testfile2, ENOENT);
+
+//       /* Try mkdir() against the test dir1.  It should fail with EEXIST. */
+
+//       fail_mkdir(g_testdir1, EEXIST);
+
+//       /* Try rmdir() against the test directory.  mkdir should now succeed. */
+
+//       succeed_rmdir(g_testdir1);
+//       show_directories("", 0);
+//       fail_stat(g_testdir1, ENOENT);
+
+//       /* Try mkdir() against the test dir2.  It should succeed */
+
+//       succeed_mkdir(g_testdir2);
+//       show_directories("", 0);
+//       succeed_stat(g_testdir2);
+//       show_statfs(g_testdir2);
+
+//       /* Try mkdir() against the test dir2.  It should fail with EXIST */
+
+//       fail_mkdir(g_testdir2, EEXIST);
+
+      // /* Write a test file into a new directory on the test file system */
+
+      // fail_stat(g_testfile3, ENOENT);
+      
+      // show_directories("", 0);
+      // succeed_stat(g_testfile3);
+      // show_statfs(g_testfile3);
+
+      // /* Read the file that we just wrote */
+
+      // read_test_file(g_testfile3);
+
+      /* Use mkdir() to create test dir3.  It should succeed */
+#if 1
+      fail_stat(g_testdir3, ENOENT);
+      succeed_mkdir(g_testdir3);
+      // show_directories("", 0);
+      succeed_stat(g_testdir3);
+      write_test_file("/mnt/fs/NewDir2/WrTest2.txt");
+      // show_statfs(g_testdir3);
+
+      /* Try rename() on the root directory. Should fail with EXDEV */
+
+      // fail_rename(g_mntdir, g_testdir4, EXDEV);
+
+      /* Try rename() to an existing directory.  Should fail with ENOENT */
+
+      // fail_rename(g_testdir4, g_testdir3, ENOENT);
+
+      /* Try rename() to a non-existing directory.  Should succeed */
+
+
+      succeed_rename(g_testdir3, g_testdir4);
+      // show_directories("", 0);
+      fail_stat(g_testdir3, ENOENT);
+      succeed_stat(g_testdir4);
+      // show_statfs(g_testdir4);
+
+      read_test_file("/mnt/fs/NewDir3/WrTest2.txt");
+#endif
+      printf("hello world\n");
+      printf("hello world\n");
+      printf("hello world\n");
+
+      /* Unmount the file system */
+
+      printf("mount_main: Try unmount(%s)\n", g_target);
+
+      ret = umount(g_target);
+      if (ret != 0)
+        {
+          printf("mount_main: ERROR umount() failed, errno %d\n", errno);
+          g_nerrors++;
+        }
+
+      printf("mount_main: %d errors reported\n", g_nerrors);
+    }
+
+  fflush(stdout);
+  return 0;
+}
+#endif
+
+#if Origin
 int main(int argc, FAR char *argv[])
 {
   int ret;
+  // syslog(7,"in %s:%d\n",__func__,__LINE__);
 
 #ifndef CONFIG_EXAMPLES_MOUNT_DEVNAME
   /* Create a RAM disk for the test */
-
   ret = create_ramdisk();
   if (ret < 0)
     {
@@ -615,11 +788,10 @@ int main(int argc, FAR char *argv[])
 
   /* Mount the test file system (see arch/sim/src/up_deviceimage.c */
 
-  printf("mount_main: mounting %s filesystem at target=%s with source=%s\n",
-         g_filesystemtype, g_target, g_source);
+  // printf("mount_main: mounting %s filesystem at target=%s with source=%s\n",g_filesystemtype, g_target, g_source);
 
   ret = mount(g_source, g_target, g_filesystemtype, 0, NULL);
-  printf("mount_main: mount() returned %d\n", ret);
+  // printf("mount_main: mount() returned %d\n", ret);
 
   if (ret == 0)
     {
@@ -628,7 +800,6 @@ int main(int argc, FAR char *argv[])
 
 #ifdef CONFIG_EXAMPLES_MOUNT_DEVNAME
       /* Read a test file that is already on the test file system image */
-
       show_directories("", 0);
       succeed_stat(g_testfile1);
       show_statfs(g_testfile1);
@@ -637,7 +808,6 @@ int main(int argc, FAR char *argv[])
       /* Create the test directory that would have been on the canned
        * filesystem
        */
-
       succeed_mkdir(g_testdir1);
       show_directories("", 0);
       succeed_stat(g_testdir1);
@@ -666,7 +836,7 @@ int main(int argc, FAR char *argv[])
 #endif
 
       /* Try rmdir() against the test directory.  It should fail with
-       * ENOTEMPTY
+       * ENOTEMPTY 
        */
 
       fail_rmdir(g_testdir1, ENOTEMPTY);
@@ -792,3 +962,4 @@ int main(int argc, FAR char *argv[])
   fflush(stdout);
   return 0;
 }
+#endif

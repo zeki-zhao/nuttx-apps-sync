@@ -1,0 +1,106 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config GAMES_SNAKES
+	tristate "GAMES_SNAKES"
+	default n
+	depends on NX
+	select BOARDCTL
+	---help---
+		Enable the NX graphics example
+
+if GAMES_SNAKES
+
+config GAMES_SNAKES_DEFAULT_COLORS
+	bool "Use Default Colors"
+	default y
+
+if !GAMES_SNAKES_DEFAULT_COLORS
+
+config GAMES_SNAKES_BGCOLOR
+	hex "Background Color"
+	---help---
+		The color of the background.  Default depends on config GAMES_SNAKES_BPP.
+
+config GAMES_SNAKES_COLOR1
+	hex "Color of Window 1"
+	---help---
+		The color of window 1. Default depends on config GAMES_SNAKES_BPP.
+
+config GAMES_SNAKES_COLOR2
+	hex "Color of Window 2"
+	---help---
+		The color of window 2. Default depends on config GAMES_SNAKES_BPP.
+
+config GAMES_SNAKES_TBCOLOR
+	hex "Toolbar Color"
+	---help---
+		The color of the toolbar. Default depends on config GAMES_SNAKES_BPP.
+
+config GAMES_SNAKES_FONTCOLOR
+	hex "Font Color"
+	---help---
+		The color of the fonts. Default depends on config GAMES_SNAKES_BPP.
+
+endif
+
+config GAMES_SNAKES_DEFAULT_FONT
+	bool "Use Default Font"
+	default y
+
+config GAMES_SNAKES_FONTID
+	int "Font ID"
+	depends on !GAMES_SNAKES_DEFAULT_FONT
+	---help---
+		Selects the font (see font ID numbers in include/nuttx/nx/nxfonts.h)
+
+config GAMES_SNAKES_BPP
+	int "Bits-Per-Pixel"
+	default 16
+	---help---
+		Pixels per pixel to use.  Valid options include 2, 4, 8, 16, 24,
+		and 32.  Default is 16.
+
+config GAMES_SNAKES_RAWWINDOWS
+	bool "Use Raw Windows"
+	default n
+	---help---
+		Use raw windows;  Default is to use pretty, framed NXTK windows with
+		toolbars.
+
+config GAMES_SNAKES_TOOLBAR_HEIGHT
+	int "Tool bar height"
+	default 16
+	depends on !GAMES_SNAKES_RAWWINDOWS
+	---help---
+		The height of the toolbar in the NXTK framed windows
+
+comment "NX Server Options"
+
+config GAMES_SNAKES_STACKSIZE
+	int "NX Server Stack Size"
+	default DEFAULT_TASK_STACKSIZE
+	---help---
+		The stacksize to use when creating the NX server.  Default 2048
+
+config GAMES_SNAKES_CLIENTPRIO
+	int "Client Priority"
+	default 100
+	---help---
+		The client priority.  Default: 100
+
+config GAMES_SNAKES_SERVERPRIO
+	int "Server Priority"
+	default 120
+	---help---
+		The server priority.  Default: 120
+
+config GAMES_SNAKES_LISTENERPRIO
+	int "Listener Priority"
+	default 80
+	---help---
+		The priority of the event listener thread. Default 80.
+
+endif

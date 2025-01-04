@@ -1,5 +1,5 @@
 ############################################################################
-# apps/examples/mount/Makefile
+# apps/games/shift/Make.defs
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,16 +18,6 @@
 #
 ############################################################################
 
-include $(APPDIR)/Make.defs
-
-# mount() test
-
-PROGNAME = mount
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 4096#$(CONFIG_DEFAULT_TASK_STACKSIZE)
-MODULE = $(CONFIG_EXAMPLES_MOUNT)
-
-CSRCS = ramdisk.c
-MAINSRC = mount_main.c
-
-include $(APPDIR)/Application.mk
+ifneq ($(CONFIG_GAMES_SNAKES),)
+CONFIGURED_APPS += $(APPDIR)/games/Snake
+endif

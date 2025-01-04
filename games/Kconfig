@@ -7,4 +7,5 @@
 
 menu "Games"
 source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/games/shift/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/games/Snake/Kconfig"
 endmenu # Games

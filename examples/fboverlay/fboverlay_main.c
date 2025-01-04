@@ -630,7 +630,7 @@ static int overlay_accl(int fb, uint8_t overlayno, uint32_t accl)
  *
  ****************************************************************************/
 
-static int overlay_color(int fb, FAR struct fb_overlayinfo_s *oinfo)
+int overlay_color(int fb, FAR struct fb_overlayinfo_s *oinfo)
 {
   int ret;
 
@@ -793,7 +793,7 @@ static int overlay_blank(int fb, FAR struct fb_overlayinfo_s *oinfo)
  *
  ****************************************************************************/
 
-static int overlay_area(int fb, FAR struct fb_overlayinfo_s *oinfo)
+int overlay_area(int fb, FAR struct fb_overlayinfo_s *oinfo)
 {
   int ret;
 

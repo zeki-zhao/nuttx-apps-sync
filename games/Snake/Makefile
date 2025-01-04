@@ -1,5 +1,5 @@
 ############################################################################
-# apps/examples/mount/Makefile
+# apps/examples/nx/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -20,14 +20,16 @@
 
 include $(APPDIR)/Make.defs
 
-# mount() test
+# NuttX NX Graphics Example.
 
-PROGNAME = mount
+CSRCS = nx_events.c nx_kbdin.c snake.c touch.c
+MAINSRC = nx_main.c
+
+# NX built-in application info
+
+PROGNAME = Snake
 PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 4096#$(CONFIG_DEFAULT_TASK_STACKSIZE)
-MODULE = $(CONFIG_EXAMPLES_MOUNT)
-
-CSRCS = ramdisk.c
-MAINSRC = mount_main.c
+STACKSIZE = $(CONFIG_GAMES_SNAKES_STACKSIZE)
+MODULE = $(CONFIG_GAMES_SNAKES)
 
 include $(APPDIR)/Application.mk

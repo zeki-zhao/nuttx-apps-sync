@@ -717,50 +717,7 @@ static int overlay_accl(int fb, uint8_t overlayno, uint32_t accl)
   return (oinfo.accl & accl) ? OK : -1;
 }
 
-/****************************************************************************
- * Name: overlay_color
- *
- * Description:
- *   Set overlay color
- *
- * Parameters:
- *   fb    - Open framebuffer filehandle
- *   oinfo - Overlay information
- *
- ****************************************************************************/
 
-static int overlay_color(int fb, FAR struct fb_overlayinfo_s *oinfo)
-{
-  int ret;
-
-  printf("Overlay: %d, set color: 0x%08" PRIx32 "\n",
-         oinfo->overlay, oinfo->color);
-
-  ret = overlay_accl(fb, oinfo->overlay, FB_ACCL_COLOR);
-  if (ret != OK)
-    {
-      fprintf(stderr, "No hardware acceleration to set a color within the "
-              "selected overlay area\n");
-    }
-  else
-    {
-#ifdef CONFIG_FB_SYNC
-      ret = ioctl(fb, FBIO_WAITFORVSYNC, 0);
-      if (ret != OK)
-        {
-          fprintf(stderr, "Unable to sync upon vertical line\n");
-        }
-#endif
-
-      ret = ioctl(fb, FBIOSET_COLOR, (unsigned long)(uintptr_t)oinfo);
-      if (ret != OK)
-        {
-          fprintf(stderr, "Unable to set overlay color\n");
-        }
-    }
-
-  return ret;
-}
 
 /****************************************************************************
  * Name: overlay_chromakey
@@ -880,43 +837,7 @@ static int overlay_blank(int fb, FAR struct fb_overlayinfo_s *oinfo)
   return ret;
 }
 
-/****************************************************************************
- * Name: overlay_area
- *
- * Description:
- *   Select overlay area
- *
- * Parameters:
- *   fb        - Open framebuffer filehandle
- *   oinfo     - Overlay information
- *
- ****************************************************************************/
 
-static int overlay_area(int fb, FAR struct fb_overlayinfo_s *oinfo)
-{
-  int ret;
-
-  printf("Overlay: %d, set xpos: %d, ypos: %d, xres: %d, yres: %d\n",
-         oinfo->overlay, oinfo->sarea.x, oinfo->sarea.y, oinfo->sarea.w,
-         oinfo->sarea.h);
-
-  ret = overlay_accl(fb, oinfo->overlay, FB_ACCL_AREA);
-  if (ret != OK)
-    {
-      fprintf(stderr, "No hardware acceleration to select area within "
-              "the selected overlay area\n");
-    }
-  else
-    {
-      ret = ioctl(fb, FBIOSET_AREA, (unsigned long)(uintptr_t)oinfo);
-      if (ret != OK)
-        {
-          fprintf(stderr, "Unable to select area\n");
-        }
-    }
-
-  return ret;
-}
 
 /****************************************************************************
  * Name: overlay_blit
