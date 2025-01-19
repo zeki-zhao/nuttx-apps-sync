@@ -53,6 +53,8 @@
 
 #include "nxterm_internal.h"
 
+// #include <../graphics/nxterm/nxterm.h>
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -195,6 +197,40 @@ static int nxterm_task(int argc, char **argv)
 
   return EXIT_SUCCESS;
 }
+
+/****************************************************************************
+ * Name: nxterm_input_listener
+ ****************************************************************************/
+static void nxterm_input_listener(int argc, char **argv)
+{
+  int status = 0;
+  int nxterm_input_test_fd;
+  int ret;
+  char buf[10];
+  for(;;)
+  {
+    switch (status)
+    {
+    case 0:
+        /* code */
+        nxterm_input_test_fd = open(CONFIG_EXAMPLES_NXTERM_DEVNAME, O_RDWR); //需要在开启nxterm之后再打开这个listen
+        if (nxterm_input_test_fd < 0){
+            printf("ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_NXTERM_DEVNAME, errno);
+            status = 0;
+        }else{
+            printf("open nxterm0 success\n");
+            status = 1;
+        }
+        break;
+    case 1:
+        ret = read(nxterm_input_test_fd, buf, 1); //读取nxterm设备的输入
+        if(ret > 0){
+            write(nxterm_input_test_fd, buf,1); //写入nxterm设备显示
+        }
+    }
+  }
+}
+
 
 /****************************************************************************
  * Public Functions
@@ -361,7 +397,7 @@ int main(int argc, FAR char *argv[])
 
   /* Open the NxTerm driver */
 
-  fd = open(CONFIG_EXAMPLES_NXTERM_DEVNAME, O_WRONLY);
+  fd = open(CONFIG_EXAMPLES_NXTERM_DEVNAME, O_RDWR);
   if (fd < 0)
     {
       printf("nxterm_main: open %s read-only failed: %d\n",
@@ -381,14 +417,17 @@ int main(int argc, FAR char *argv[])
   fflush(stdout);
   fflush(stderr);
 
-  dup2(fd, 1);
+  // dup2(fd, 0); //todo:重定向输入流,但是这里会导致输入流被重定向到nxterm，导致输入字符无法输入到shell,TODO:输入->nxterm,但是nxterm没有处理输入字符的函数
+  dup2(fd, 1); //将标准输出重定向到nxterm文件中
   dup2(fd, 2);
+  
+  
 
   /* And we can close our original driver file descriptor */
 
   close(fd);
 
-  system("kill 1\n");
+  system("kill 4\n"); //干掉终端shell
   /* And start the console task.  It will inherit stdin, stdout, and stderr
    * from this task.
    */
@@ -396,7 +435,13 @@ int main(int argc, FAR char *argv[])
   g_nxterm_vars.pid = task_create("NxTerm", 1,//CONFIG_EXAMPLES_NXTERM_PRIO,
                                   CONFIG_EXAMPLES_NXTERM_STACKSIZE,
                                   nxterm_task, NULL);
+
   DEBUGASSERT(g_nxterm_vars.pid > 0);
+
+  g_nxterm_vars.pid = task_create("NxTerm_Input_Listener", 1,//CONFIG_EXAMPLES_NXTERM_PRIO,
+                                  1024,
+                                  nxterm_input_listener, NULL);
+
   return EXIT_SUCCESS;
 
   /* Error Exits ************************************************************/
@@ -416,3 +461,47 @@ errout_with_nx:
 errout:
   return EXIT_FAILURE;
 }
+
+
+
+//回调函数，串口接收时调用？找串口输入
+void Nxterm_Callback(uint8_t nCh,FAR const uint8_t *str)
+{
+  // The argument must be the CCallback instance
+
+#ifdef CONFIG_NXTERM_NXKBDIN
+
+  static struct boardioc_nxterm_ioctl_s iocargs;
+  static struct nxtermioc_kbdin_s kbdin;
+  // Is NX keyboard input being directed to the widgets within the window
+  // (default) OR is NX keyboard input being re-directed to an NxTerm
+  // driver?
+  // printf("in %d line :%s  \n",__LINE__,__FUNCTION__);
+  if (g_nxterm_vars.hnx)
+    {
+
+      // boardctl(BOARDIOC_NXTERM_IOCTL, (uintptr_t)&iocargs); //在什么时候调用这个函数，就在什么时候输入字符
+      // Keyboard input is going to an NxTerm
+
+      kbdin.handle = g_nxterm_vars.hdrvr;
+      kbdin.buffer = str;
+      kbdin.buflen = nCh;
+
+      // printf("ikbdin.buffer = %s\n",kbdin.buffer);
+      // printf("ikbdin.buflen = %d\n",kbdin.buflen);
+
+      iocargs.cmd  = NXTERMIOC_NXTERM_KBDIN;
+      iocargs.arg  = (uintptr_t)&kbdin;
+
+      boardctl(BOARDIOC_NXTERM_IOCTL, (uintptr_t)&iocargs);
+    }
+#endif
+
+}
+
+void Nxterm_CallBack_Kdbin(uint8_t nCh,FAR const uint8_t *str)
+{
+  // The argument must be the CCallback instance
+  nxterm_kbdin(g_nxterm_vars.hdrvr, str, nCh);
+}
+

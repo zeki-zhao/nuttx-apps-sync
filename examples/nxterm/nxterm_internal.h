@@ -252,4 +252,9 @@ extern const struct nx_callback_s g_nxtoolcb;
 
 FAR void *nxterm_listener(FAR void *arg);
 
+
+void Nxterm_Callback(uint8_t nCh,FAR const uint8_t *str);
+
+void Nxterm_CallBack_Kdbin(uint8_t nCh,FAR const uint8_t *str);
+
 #endif /* __APPS_EXAMPLES_NXTERM_NXTERM_INTERNAL_H */

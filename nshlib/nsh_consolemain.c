@@ -29,6 +29,8 @@
 #include "nsh.h"
 #include "nsh_console.h"
 
+#include "syslog.h"
+
 #if !defined(CONFIG_NSH_ALTCONDEV) && !defined(HAVE_USB_CONSOLE) && \
     !defined(HAVE_USB_KEYBOARD)
 
@@ -67,7 +69,7 @@ int nsh_consolemain(int argc, FAR char *argv[])
   DEBUGASSERT(pstate != NULL);
 
   /* Execute the session */
-
+  syslog(LOG_DEBUG, "outfd=%d\n", pstate->cn_outfd);
   ret = nsh_session(pstate, NSH_LOGIN_LOCAL, argc, argv);
 
   /* Exit upon return */

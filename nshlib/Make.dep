@@ -1022,7 +1022,9 @@ nsh_consolemain.c.home.zeki.workspace.NuttX.nuttxspace.Nuttx_Stm32F429.apps.nshl
  /home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/nuttx/include/errno.h \
  /home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/nuttx/include/nuttx/usb/usbdev_trace.h \
  nsh_console.h \
- /home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/nuttx/include/nuttx/queue.h
+ /home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/nuttx/include/nuttx/queue.h \
+ /home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/nuttx/include/syslog.h \
+ /usr/lib/gcc/arm-none-eabi/9.2.1/include/stdarg.h
 nsh_printf.c.home.zeki.workspace.NuttX.nuttxspace.Nuttx_Stm32F429.apps.nshlib.o: \
  nsh_printf.c \
  /home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/nuttx/include/nuttx/config.h \

@@ -450,8 +450,5 @@ int snake(NXEGWINDOW *hwnd)
     pthread_create(&t1,NULL,refreshjiemian,hwnd);  //创建界面刷新线程
     pthread_create(&t2,NULL,changeDir,NULL);       //创建键盘方向输入监测线程
 
-    // getch();
-    // endwin();
-
     return 0;
 }
