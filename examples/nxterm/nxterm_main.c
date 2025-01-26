@@ -438,7 +438,7 @@ int main(int argc, FAR char *argv[])
 
   DEBUGASSERT(g_nxterm_vars.pid > 0);
 
-  g_nxterm_vars.pid = task_create("NxTerm_Input_Listener", 1,//CONFIG_EXAMPLES_NXTERM_PRIO,
+  g_nxterm_vars.pid = task_create("NxTerm_Input_Listener", 2,//CONFIG_EXAMPLES_NXTERM_PRIO,高优先级先处理回车输出
                                   1024,
                                   nxterm_input_listener, NULL);
 
@@ -460,43 +460,6 @@ errout_with_nx:
 
 errout:
   return EXIT_FAILURE;
-}
-
-
-
-//回调函数，串口接收时调用？找串口输入
-void Nxterm_Callback(uint8_t nCh,FAR const uint8_t *str)
-{
-  // The argument must be the CCallback instance
-
-#ifdef CONFIG_NXTERM_NXKBDIN
-
-  static struct boardioc_nxterm_ioctl_s iocargs;
-  static struct nxtermioc_kbdin_s kbdin;
-  // Is NX keyboard input being directed to the widgets within the window
-  // (default) OR is NX keyboard input being re-directed to an NxTerm
-  // driver?
-  // printf("in %d line :%s  \n",__LINE__,__FUNCTION__);
-  if (g_nxterm_vars.hnx)
-    {
-
-      // boardctl(BOARDIOC_NXTERM_IOCTL, (uintptr_t)&iocargs); //在什么时候调用这个函数，就在什么时候输入字符
-      // Keyboard input is going to an NxTerm
-
-      kbdin.handle = g_nxterm_vars.hdrvr;
-      kbdin.buffer = str;
-      kbdin.buflen = nCh;
-
-      // printf("ikbdin.buffer = %s\n",kbdin.buffer);
-      // printf("ikbdin.buflen = %d\n",kbdin.buflen);
-
-      iocargs.cmd  = NXTERMIOC_NXTERM_KBDIN;
-      iocargs.arg  = (uintptr_t)&kbdin;
-
-      boardctl(BOARDIOC_NXTERM_IOCTL, (uintptr_t)&iocargs);
-    }
-#endif
-
 }
 
 void Nxterm_CallBack_Kdbin(uint8_t nCh,FAR const uint8_t *str)
