@@ -342,7 +342,7 @@ nxeg_addchar(FAR struct nxeg_state_s *st, uint8_t ch)
 
   /* Is there space for another character on the display? */
 
-  if (st->nchars < NXTK_MAXKBDCHARS)
+  if (st->nchars < NXTK_MAXKBDCHARS) //TODO：字数限制可修改
     {
        /* Yes, setup the bitmap */
 
@@ -362,7 +362,7 @@ nxeg_addchar(FAR struct nxeg_state_s *st, uint8_t ch)
          {
             /* The first character is one space from the left */
 
-            leftx  = st->spwidth;
+            leftx  = st->spwidth; //todo:可以改变位置
          }
        else
          {
@@ -373,7 +373,7 @@ nxeg_addchar(FAR struct nxeg_state_s *st, uint8_t ch)
          }
 
        bm->bounds.pt1.x = leftx;
-       bm->bounds.pt1.y = 2;
+       bm->bounds.pt1.y = 2; //todo:可以改变位置
        bm->bounds.pt2.x = leftx + bm->glyph->width - 1;
        bm->bounds.pt2.y = 2 + bm->glyph->height - 1;
 

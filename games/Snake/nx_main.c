@@ -49,7 +49,7 @@
 #include "nx_internal.h"
 
 #include "touch.h"
-// #include "snake.h"
+#include "snake.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -74,10 +74,11 @@
 
 static int g_exitcode = NXEXIT_SUCCESS;
 
-static struct nxeg_state_s g_wstate[1];
+static struct nxeg_state_s g_wstate[2];
 
 #ifdef CONFIG_NX_KBD
 static const uint8_t g_kbdmsg2[] = "Hello,zeki!";
+static const uint8_t g_kbdmsg3[] = "Hello,world";
 #endif
 
 /* The font handle */
@@ -219,6 +220,19 @@ static inline NXEGWINDOW nxeg_openwindow(FAR const struct nx_callback_s *cb,
   NXEGWINDOW hwnd;
 
   hwnd = nxtk_openwindow(g_snake_hnx, 0, cb, (FAR void *)state);
+  if (!hwnd)
+    {
+      printf("nxeg_openwindow: nxtk_openwindow failed: %d\n", errno);
+      g_exitcode = NXEXIT_NXOPENWINDOW;
+    }
+  return hwnd;
+}
+
+static inline NXEGWINDOW nxeg_openwindow_noinput(FAR struct nxeg_state_s *state)
+{
+  NXEGWINDOW hwnd;
+
+  hwnd = nxtk_openwindow(g_snake_hnx, 0, &g_snake_nxcb, (FAR void *)state);
   if (!hwnd)
     {
       printf("nxeg_openwindow: nxtk_openwindow failed: %d\n", errno);
@@ -505,13 +519,20 @@ static int nxeg_initialize(void)
  ****************************************************************************/
 int main(int argc, FAR char *argv[])
 {
-    NXEGWINDOW hwnd1;
-    NXEGWINDOW hwnd2;
-    struct nxgl_size_s size;
-    struct nxgl_point_s pt;
     nxgl_mxpixel_t color;
     int ret;
 
+    struct nxhw_handle hwnd1;
+    hwnd1.nxeg_openwindow = nxeg_openwindow_noinput;
+    hwnd1.nxeg_closewindow = nxeg_closewindow;
+    hwnd1.nxeg_setsize = nxeg_setsize;
+    hwnd1.nxeg_setposition = nxeg_setposition;
+
+    struct nxhw_handle hwnd2;
+    hwnd2.nxeg_openwindow = nxeg_openwindow_noinput;
+    hwnd2.nxeg_closewindow = nxeg_closewindow;
+    hwnd2.nxeg_setsize = nxeg_setsize;
+    hwnd2.nxeg_setposition = nxeg_setposition;
     /* Initialize */
 
     ret = nxeg_initialize();
@@ -547,12 +568,20 @@ int main(int argc, FAR char *argv[])
     }
 
     /* Create window #1 */
-
     printf("nx_main: Create window #1\n");
-    nxeg_initstate(&g_wstate[0], 1, CONFIG_EXAMPLES_NX_COLOR1);
-    hwnd1 = nxeg_openwindow(&g_snake_nxcb, &g_wstate[0]);
-    printf("nx_main: hwnd1=%p\n", hwnd1);
-    if (!hwnd1)
+    nxeg_initstate(&hwnd1.g_wstate, 1, CONFIG_EXAMPLES_NX_COLOR1);
+    hwnd1.hwnd = nxeg_openwindow(&g_snake_nxcb, &hwnd1.g_wstate);
+    printf("nx_main: hwnd1=%p\n", hwnd1.hwnd);
+    if (!hwnd1.hwnd)
+    {
+        goto errout_with_nx;
+    }
+
+    /* Create window #2 */
+    nxeg_initstate(&hwnd2.g_wstate, 2, CONFIG_EXAMPLES_NX_COLOR1);
+    hwnd2.hwnd = nxeg_openwindow(&g_snake_nxcb, &hwnd2.g_wstate); //分数窗口
+    printf("nx_main: hwnd2=%p\n", hwnd2.hwnd);
+    if (!hwnd2.hwnd)
     {
         goto errout_with_nx;
     }
@@ -567,14 +596,26 @@ int main(int argc, FAR char *argv[])
 
     /* Set the size of the window 1 */
 
-    size.w = g_snake_xres;
-    size.h = g_snake_yres-5;
+    hwnd1.size.w = g_snake_xres;
+    hwnd1.size.h = g_snake_yres-5;
 
-    printf("nx_main: Set window #1 size to (%d,%d)\n", size.w, size.h);
-    ret = nxeg_setsize(hwnd1, &size);
+    printf("nx_main: Set window #1 size to (%d,%d)\n", hwnd1.size.w, hwnd1.size.h);
+    ret = nxeg_setsize(hwnd1.hwnd, &hwnd1.size);
     if (ret < 0)
     {
         goto errout_with_hwnd1;
+    }
+
+    /* Set the size of the window 2 */
+
+    hwnd2.size.w = 100;
+    hwnd2.size.h = 50;
+
+    printf("nx_main: Set window #2 size to (%d,%d)\n", hwnd2.size.w, hwnd2.size.h);
+    ret = nxeg_setsize(hwnd2.hwnd, &hwnd2.size);
+    if (ret < 0)
+    {
+        goto errout_with_hwnd2;
     }
 
     /* Sleep a bit -- both so that we can see the result of the above operations
@@ -587,14 +628,26 @@ int main(int argc, FAR char *argv[])
 
     /* Set the position of window #1 */
 
-    pt.x = 0; //左上角
-    pt.y = 0; //左上角
+    hwnd1.pt.x = 0; //左上角
+    hwnd1.pt.y = 0; //左上角
 
-    printf("nx_main: Set window #1 position to (%d,%d)\n", pt.x, pt.y);
-    ret = nxeg_setposition(hwnd1, &pt);
+    printf("nx_main: Set window #1 position to (%d,%d)\n", hwnd1.pt.x, hwnd1.pt.y);
+    ret = nxeg_setposition(hwnd1.hwnd, &hwnd1.pt);
     if (ret < 0)
     {
         goto errout_with_hwnd1;
+    }
+
+    /* Set the position of window #2 */
+
+    hwnd2.pt.x = 650; //左上角
+    hwnd2.pt.y = 50; //左上角
+
+    printf("nx_main: Set window #2 position to (%d,%d)\n", hwnd2.pt.x, hwnd2.pt.y);
+    ret = nxeg_setposition(hwnd2.hwnd, &hwnd2.pt);
+    if (ret < 0)
+    {
+        goto errout_with_hwnd2;
     }
 
     /* Sleep a bit */
@@ -606,7 +659,7 @@ int main(int argc, FAR char *argv[])
 
     #ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
     printf("nx_main: Add toolbar to window #1\n");
-    ret = nxeq_opentoolbar(hwnd1, CONFIG_EXAMPLES_NX_TOOLBAR_HEIGHT, &g_snake_tbcb, &g_wstate[0]);
+    ret = nxeq_opentoolbar(hwnd1.hwnd, CONFIG_EXAMPLES_NX_TOOLBAR_HEIGHT, &g_snake_tbcb, &hwnd1.g_wstate);
     if (ret < 0)
     {
         goto errout_with_hwnd1;
@@ -630,6 +683,14 @@ int main(int argc, FAR char *argv[])
         goto errout_with_hwnd1;
     }
 
+    sleep(2);
+    ret = nx_kbdin(g_snake_hnx, strlen((FAR const char *)g_kbdmsg3), g_kbdmsg3);
+    if (ret < 0)
+    {
+        printf("nx_main: nx_kbdin failed: %d\n", errno);
+        goto errout_with_hwnd2;
+    }
+
     /* Sleep a bit */
 
     printf("nx_main: Sleeping\n\n");
@@ -642,18 +703,27 @@ int main(int argc, FAR char *argv[])
     sleep(1);
 
     ////////////////////////////////////////////////
-    snake(hwnd1);
-    
+    snake(g_snake_hnx,&hwnd1,&hwnd2);
+
+    // sleep(2);
+    // nxeg_closewindow(hwnd1, &g_wstate[0]);
+    // exit(0);
+
+
     touch();
 
     sleep(1);
     ///////////////////////////////////////////////////
 
+   /* Close the window2 */
+    errout_with_hwnd2:
+    printf("nx_main: Close window #2\n");
+    nxeg_closewindow(hwnd2.hwnd, &hwnd2.g_wstate);
 
     /* Close the window1 */
     errout_with_hwnd1:
     printf("nx_main: Close window #1\n");
-    nxeg_closewindow(hwnd1, &g_wstate[0]);
+    nxeg_closewindow(hwnd1.hwnd, &hwnd1.g_wstate);
 
     errout_with_nx:
     /* Disconnect from the server */

@@ -1,1 +1,1 @@
-{ "Snake", SCHED_PRIORITY_DEFAULT, 4096, Snake_main },
+{ "Snake", SCHED_PRIORITY_DEFAULT, 8192, Snake_main },

@@ -50,7 +50,7 @@
 #endif
 
 #ifndef CONFIG_EXAMPLES_NX_BPP
-#  define CONFIG_EXAMPLES_NX_BPP 32
+#  define CONFIG_EXAMPLES_NX_BPP 16
 #endif
 
 #ifndef CONFIG_EXAMPLES_NX_BGCOLOR
@@ -141,7 +141,7 @@
 #  define NXEGWINDOW NXTKWINDOW
 #endif
 
-#define NXTK_MAXKBDCHARS 16
+#define NXTK_MAXKBDCHARS 30
 
 /****************************************************************************
  * Public Types
@@ -211,6 +211,19 @@ struct nxeg_state_s
   struct nxeg_bitmap_s bm[NXTK_MAXKBDCHARS];
   struct nxeg_glyph_s  glyph[NXTK_MAXKBDCHARS];
 #endif
+};
+
+/* 窗口操作句柄 */
+struct nxhw_handle
+{
+  NXEGWINDOW hwnd; /* 窗口 */
+  struct nxeg_state_s g_wstate;
+  struct nxgl_size_s size; 
+  struct nxgl_point_s pt;
+  NXEGWINDOW (*nxeg_openwindow)(FAR struct nxeg_state_s *state); /* 开启窗口 */
+  int (*nxeg_closewindow)(NXEGWINDOW hwnd, FAR struct nxeg_state_s *state); /* 关闭窗口 */
+  int (*nxeg_setsize)(NXEGWINDOW hwnd, FAR struct nxgl_size_s *size); /* 设置尺寸 */
+  int (*nxeg_setposition)(NXEGWINDOW hwnd, FAR struct nxgl_point_s *pos) /* 设置位置 */
 };
 
 /****************************************************************************

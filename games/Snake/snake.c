@@ -326,24 +326,33 @@ void moveSnake(NXEGWINDOW *hwnd)
     }
 }
 
+/*刷新分数*/
+void showScore(struct nxhw_handle *hwnd_score)
+{
+    hwnd_score->nxeg_closewindow(hwnd_score->hwnd, &hwnd_score->g_wstate);
+    // hwnd_score->nxeg_openwindow(&hwnd_score->g_wstate);
+}
+
+
 /*地图界面刷新线程函数*/
-void* refreshjiemian(void *arg )
+void* refreshjiemian(const void *arg)
 {
     static int temp = 0;
-    NXEGWINDOW *hwnd = (NXEGWINDOW *)arg;
-    // printf("in %s :%d\n",__FILE__,__LINE__);
+    struct nxhw_handle **nxhw_handle_set; //二级指针
+    nxhw_handle_set = arg; //指针数组
+    printf("nxhw_handle_set addr:%p\n",(void *)nxhw_handle_set);
+    
+    struct nxhw_handle *hwnd_main = nxhw_handle_set[0];
+    struct nxhw_handle *hwnd_score = nxhw_handle_set[1];
+    printf("hwnd_main addr:%p\n",(void *)hwnd_main);
+    printf("hwnd_score addr:%p\n",(void *)hwnd_score);
+
     while(1)
     {
-        moveSnake(hwnd);           //蛇链表移动
-        // gamePic(hwnd);             //地图刷新
-
-        // printf("in %s :%d\n",__FILE__,__LINE__);
-
-        // if(temp++>10)
-        // {
-        //     dir = DOWN;
-        // }
-        usleep(200000);           //线程休眠函数，150ms
+        moveSnake(hwnd_main->hwnd);           //蛇链表移动
+        showScore(hwnd_score); //TODO:显示分数   
+        
+        usleep(10000);           //线程休眠函数，150ms
     } 
 }
 
@@ -363,39 +372,32 @@ int Snake_Get_Dir(void)
         (Snake_Touch.point->y > UP_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < UP_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-        printf("in %s :%d\n",__FILE__,__LINE__);
-        printf("X: %d Y:%d\n",Snake_Touch.point->x,Snake_Touch.point->y);
-        usleep(100000);           //线程休眠函数，150ms
+        // usleep(10000);           //线程休眠函数，150ms
         return KEY_UP; 
     }
-
     if((Snake_Touch.point->x > DOWN_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < DOWN_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
         (Snake_Touch.point->y > DOWN_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < DOWN_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-        printf("in %s :%d\n",__FILE__,__LINE__);
-        usleep(100000);           //线程休眠函数，150ms
+        // usleep(10000);           //线程休眠函数，150ms
         return KEY_DOWN; 
     }
-
     if((Snake_Touch.point->x > LEFT_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < LEFT_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
         (Snake_Touch.point->y > LEFT_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < LEFT_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-        printf("in %s :%d\n",__FILE__,__LINE__);
-        usleep(100000);           //线程休眠函数，150ms
+        // usleep(10000);           //线程休眠函数，150ms
         return KEY_LEFT; 
     }
-
     if((Snake_Touch.point->x > RIGHT_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < RIGHT_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
         (Snake_Touch.point->y > RIGHT_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < RIGHT_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-        printf("in %s :%d\n",__FILE__,__LINE__);
-        usleep(100000);           //线程休眠函数，150ms
+
+        // usleep(10000);           //线程休眠函数，150ms
         return KEY_RIGHT; 
     }    
 
@@ -432,22 +434,29 @@ void* changeDir()
     }
 }
  
-int snake(NXEGWINDOW *hwnd)
+int snake(NXHANDLE *hnx,struct nxhw_handle *hwnd_main,struct nxhw_handle *hwnd_score)
 {
     pthread_t t1;               //创建线程变量t1
     pthread_t t2;               //创建线程变量t2
 
+    struct nxhw_handle * nxhw_handle_set[2]; //指针数组
+    nxhw_handle_set[0] = hwnd_main; //数组0保存地址
+    nxhw_handle_set[1] = hwnd_score;
+    printf("nxhw_handle_set addr:%p\n",(void *)nxhw_handle_set);
+    printf("hwnd_main addr:%p\n",(void *)nxhw_handle_set[0]);
+    printf("hwnd_score addr:%p\n",(void *)nxhw_handle_set[1]);
+
     // // // printf("in %s :%d\n",__FILE__,__LINE__);   
 
-    initSnake(hwnd);                //初始化蛇列表
-    gamePic(hwnd);                  //地图初始化 //todo:这个有问题？ 好像是的 需要使用这个函数中的边界
+    initSnake(hwnd_main->hwnd);                //初始化蛇列表
+    gamePic(hwnd_main->hwnd);                  //地图初始化 //todo:这个有问题？ 好像是的 需要使用这个函数中的边界
 
     // Snake_draw_squares(hwnd,100,200,50,0x07e0);
 
     
     // // // printf("in %s :%d\n",__FILE__,__LINE__);
 
-    pthread_create(&t1,NULL,refreshjiemian,hwnd);  //创建界面刷新线程
+    pthread_create(&t1,NULL,refreshjiemian,nxhw_handle_set);  //创建界面刷新线程
     pthread_create(&t2,NULL,changeDir,NULL);       //创建键盘方向输入监测线程
 
     return 0;
