@@ -29,157 +29,83 @@
 
 #include <nuttx/config.h>
 
+extern pthread_t Touch_t1;    //创建线程变量t1
+extern pthread_t Snake_t1;    //创建线程变量t1
 struct touch_sample_s Snake_Touch;
-static int mytouch_fd = -1;
-static struct pollfd myfds;
+extern int mytouch_fd;
+extern struct pollfd touch_fds;
 
-// static int led_fd = -1;
-// static int ledSwitch = 1;
+#define CLOSE_BUTTON_X 780
+#define CLOSE_BUTTON_Y 0
+#define CLOSE_BUTTON_SIZE 20
 
-// static void test(struct pollfd *fds)
-// {
-//     printf("hello,in %s: %d\n",__func__,__LINE__);
-//     if(ledSwitch == 1)
-//     {
-//         ledSwitch = 0;
-//     }else{
-//         ledSwitch = 1;
-//     }
-//     ioctl(led_fd,ledSwitch,2);
-// }
-
-/****************************************************************************
- * Name: overlay_accl
- *
- * Description:
- *   Determines overlay acceleration support
- *
- * Parameters:
- *   fb        - Open framebuffer filehandle
- *   overlayno - Overlay number
- *   accl      - Acceleration to detect
- *
- * Return:
- *   OK    - Success
- *   ERROR - Failed
- ****************************************************************************/
-
-static int overlay_accl(int fb, uint8_t overlayno, uint32_t accl)
+void* touch_detect(void *arg)
 {
-  int ret;
-  struct fb_overlayinfo_s oinfo;
 
-  oinfo.overlay = overlayno;
-
-  ret = ioctl(fb, FBIOGET_OVERLAYINFO, (unsigned long)((uintptr_t)&oinfo));
-  if (ret != OK)
+    int ret;
+    int cnt = 0;
+    struct pollfd* fds = (struct pollfd*)arg;
+    while(1)
     {
-      fprintf(stderr, "Unable to get overlay information\n");
-      return -1;
+        
+        // printf("hello\n");
+        // printf("hello\n");
+        // printf("touch_fds.fd: %d\n",touch_fds.fd);
+        ret = poll(&touch_fds,1,20);
+        if(ret > 0)
+        {
+            // printf("In %s: %d\n",__func__,__LINE__);
+            ret = read(mytouch_fd,&Snake_Touch,sizeof(struct touch_sample_s));
+            if(ret > 0)
+            {
+                if((Snake_Touch.point->x > CLOSE_BUTTON_X) && 
+                (Snake_Touch.point->x < CLOSE_BUTTON_X + CLOSE_BUTTON_SIZE) && 
+                (Snake_Touch.point->y > CLOSE_BUTTON_Y) && 
+                (Snake_Touch.point->y < CLOSE_BUTTON_Y + CLOSE_BUTTON_SIZE))
+                {
+                    printf("touch_detect exit\n");
+                    pthread_kill(Snake_t1, SIGUSR1); //给Snake_t1线程发送关闭信号
+                    pthread_exit(NULL);
+                }
+            }
+            // printf("npoints:%d\t x:%d y:%d\n",Snake_Touch.npoints,Snake_Touch.point->x,Snake_Touch.point->y);
+        }
+        // usleep(10000);
+        // sleep(1);
     }
-
-  printf("%s: %08" PRIx32 " %08" PRIx32 "\n", __func__, oinfo.accl, accl);
-  return (oinfo.accl & accl) ? OK : -1;
 }
 
-
-static void usage(const char * progname)
-{
-  fprintf(stderr,
-          "usage: %s <option> -d <fbdev>\n"
-          "\n"
-          "    -vinfo\n"
-          "    -pinfo\n"
-          "    -oinfo overlayno\n"
-          "    -fill overlayno <color> <xpos> <ypos> <xres> <yres>\n"
-          "      color: pixel format color\n"
-          "      xpos: x-offset\n"
-          "      ypos: y-offset\n"
-          "      xres: x-resolution or area width\n"
-          "      yres: y-resolution or area height\n"
-#ifdef CONFIG_FB_CMAP
-          "    -cmap <color1> <color2> <color3> <color4> <color5>\n"
-          "      colors: 0xAARRGGBB\n"
-          "      one color must be set at least\n"
-#endif
-          "    -color overlayno <value>\n"
-          "      value: pixel format color\n"
-          "    -chroma overlayno <value>\n"
-          "      value: pixel format color\n"
-          "    -transp overlayno <value> <mode>\n"
-          "      value: 0-255\n"
-          "      mode : %d = const alpha, %d = pixel alpha\n"
-          "    -blank : <value>\n"
-          "      0 : On\n"
-          "      1 : Off\n"
-          "    -area overlayno <xpos> <ypos> <xres> <yres>\n"
-#ifdef CONFIG_FB_OVERLAY_BLIT
-          "    -blit doverlayno <destxpos> <destypos> <destxres> "
-          "<destyres>\n"
-          "          soverlayno <srcxpos> <srcypos> <srcxres> <srcyres>\n"
-          "    -blend doverlayno <dxpos> <dypos> <dxres> <dyres>\n"
-          "           foverlayno <fxpos> <fypos> <fxres> <fyres>\n"
-          "           boverlayno <bxpos> <bypos> <bxres> <byres>\n"
-#endif
-          "\n"
-          "    -d <fbdev> optional, default: \"/dev/fb0\"\n",
-          progname, FB_CONST_ALPHA, FB_PIXEL_ALPHA);
-}
-
-static int fbopen(const char * device)
-{
-  int fb = open(device, O_RDWR);
-
-  if (fb < 0)
-    {
-      fprintf(stderr, "Unable to open framebuffer device: %s\n", device);
-      return EXIT_FAILURE;
-    }
-
-  return fb;
-}
 
 int touch(void)
 {
-  printf("In %s:%d\n",__func__,__LINE__);
     int ret;
-    char *fbdevice;
-    int  fb = -1;
-    struct fb_overlayinfo_s oinfo;
- 
-
-    // fbdevice = "/dev/fb0";
-    // oinfo.overlay   = 1;
-    // oinfo.color     = 0xfff;
-
-    // fb = fbopen(fbdevice);
-    // if (fb >= 0)
-    //   {
-    //     overlay_color(fb, &oinfo);
-    //   }
-    
-    printf("In %s:%d\n",__func__,__LINE__);
-
     mytouch_fd = open("/dev/mytouch", O_RDWR);
     printf("mytouch_fd:%d\n",mytouch_fd);
     if(mytouch_fd > 0){
         printf("open mytouch success!\n");
     }
+    touch_fds.fd = mytouch_fd; 
+    touch_fds.events = POLLIN;
 
-    myfds.fd = mytouch_fd; 
-    myfds.events = POLLIN;
-    // myfds.cb = test;
+    pthread_attr_t attr;
+    size_t stack_size = 4096; // 设置堆栈大小为 1MB
 
-
-    while(1)
+    // 初始化线程属性对象
+    if (pthread_attr_init(&attr) != 0) {
+        perror("pthread_attr_init failed");
+        return -1;
+    }
+    // 设置堆栈大小
+    if (pthread_attr_setstacksize(&attr, stack_size) != 0) {
+        perror("pthread_attr_setstacksize failed");
+        return -1;
+    }    
+    ret = pthread_create(&Touch_t1,&attr,touch_detect,&touch_fds);  //创建界面刷新线程  /* 传入二级指针：指针数组的地址实际为二级指针 */
+    // 销毁线程属性对象
+    pthread_attr_destroy(&attr);
+    if(ret < 0 )
     {
-        ret = poll(&myfds,1,-1);
-        if( ret > 0)
-        {
-            // printf("In %s: %d\n",__func__,__LINE__);
-            read(mytouch_fd,&Snake_Touch,sizeof(struct touch_sample_s));
-            printf("npoints:%d\t x:%d y:%d\n",Snake_Touch.npoints,Snake_Touch.point->x,Snake_Touch.point->y);
-        }
+        return -1;
     }
     return 0;
 }

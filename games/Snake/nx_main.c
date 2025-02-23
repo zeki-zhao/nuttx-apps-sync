@@ -51,6 +51,33 @@
 #include "touch.h"
 #include "snake.h"
 
+
+/* touch.c  */
+#include <stdbool.h>
+#include <sys/types.h>
+#include <fcntl.h>
+// #include <nuttx/analog/ioctl.h>
+#include <syslog.h>
+
+#include <sys/ioctl.h>
+#include <nuttx/i2c/i2c_master.h>
+#include <nuttx/input/gt9xx.h>
+#include <nuttx/../sys/poll.h>
+
+#include <nuttx/input/touchscreen.h>
+
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sys/mman.h>
+#include <unistd.h>
+
+
+#include <nuttx/config.h>
+
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -74,10 +101,6 @@
 
 static int g_exitcode = NXEXIT_SUCCESS;
 
-#ifdef CONFIG_NX_KBD
-static const uint8_t g_kbdmsg2[] = "Hello,zeki!";
-static const uint8_t g_kbdmsg3[] = "Hello,world";
-#endif
 
 /* The font handle */
 
@@ -108,6 +131,8 @@ nxgl_mxpixel_t g_snake_color2[CONFIG_NX_NPLANES];
 nxgl_mxpixel_t g_snake_tbcolor[CONFIG_NX_NPLANES];
 #endif
 
+int mytouch_fd;/* 触控设备文件号 */
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -115,6 +140,20 @@ nxgl_mxpixel_t g_snake_tbcolor[CONFIG_NX_NPLANES];
 /****************************************************************************
  * Name: nxeg_drivemouse
  ****************************************************************************/
+static void nxeg_draw_exit_button(NXEGWINDOW hwnd)
+{
+    int ret;
+    struct nxgl_rect_s TempRect;
+    TempRect.pt1.x = 780;
+    TempRect.pt1.y = 0;
+    TempRect.pt2.x = 800;
+    TempRect.pt2.y = 20;
+    ret = nx_fill(hwnd, &TempRect, 0x07e2);
+    if (ret < 0)
+    {
+        printf("nx_main: nx_fill failed: %d\n", errno);
+    }
+}
 
 #ifdef CONFIG_NX_XYINPUT
 static void nxeg_drivemouse(void)
@@ -226,18 +265,18 @@ static inline NXEGWINDOW nxeg_openwindow(FAR const struct nx_callback_s *cb,
   return hwnd;
 }
 
-static inline NXEGWINDOW nxeg_openwindow_noinput(FAR struct nxeg_state_s *state)
-{
-  NXEGWINDOW hwnd;
-
-  hwnd = nxtk_openwindow(g_snake_hnx, 0, &g_snake_nxcb, (FAR void *)state);
-  if (!hwnd)
-    {
-      printf("nxeg_openwindow: nxtk_openwindow failed: %d\n", errno);
-      g_exitcode = NXEXIT_NXOPENWINDOW;
-    }
-  return hwnd;
-}
+// static inline NXEGWINDOW nxeg_openwindow_noinput(FAR struct nxeg_state_s *state)
+// {
+//   NXEGWINDOW hwnd;
+//   printf("in func %s:%d\n",__func__,__LINE__);
+//   hwnd = nxtk_openwindow(g_snake_hnx, 0, &g_snake_nxcb, (FAR void *)state);
+//   if (!hwnd)
+//     {
+//       printf("nxeg_openwindow: nxtk_openwindow failed: %d\n", errno);
+//       g_exitcode = NXEXIT_NXOPENWINDOW;
+//     }
+//   return hwnd;
+// }
 #endif
 
 /****************************************************************************
@@ -515,19 +554,29 @@ static int nxeg_initialize(void)
 /****************************************************************************
  * Name: nx_main
  ****************************************************************************/
+struct pollfd touch_fds;
+pthread_t Snake_t1;               //创建线程变量t1
+pthread_t Snake_t2;               //创建线程变量t2
+pthread_t Touch_t1;               //创建线程变量t1
+
 int main(int argc, FAR char *argv[])
 {
+    
+
     nxgl_mxpixel_t color;
     int ret;
-
     struct nxhw_handle hwnd1;
-    hwnd1.nxeg_openwindow = nxeg_openwindow_noinput;
+    struct nxhw_handle hwnd2;
+
+    hwnd1.nxeg_initstate = nxeg_initstate;
+    hwnd1.nxeg_openwindow = nxeg_openwindow;
     hwnd1.nxeg_closewindow = nxeg_closewindow;
     hwnd1.nxeg_setsize = nxeg_setsize;
     hwnd1.nxeg_setposition = nxeg_setposition;
 
-    struct nxhw_handle hwnd2;
-    hwnd2.nxeg_openwindow = nxeg_openwindow_noinput;
+    
+    hwnd2.nxeg_initstate = nxeg_initstate;
+    hwnd2.nxeg_openwindow = nxeg_openwindow;
     hwnd2.nxeg_closewindow = nxeg_closewindow;
     hwnd2.nxeg_setsize = nxeg_setsize;
     hwnd2.nxeg_setposition = nxeg_setposition;
@@ -604,26 +653,10 @@ int main(int argc, FAR char *argv[])
         goto errout_with_hwnd1;
     }
 
-    /* Set the size of the window 2 */
-
-    hwnd2.size.w = 100;
-    hwnd2.size.h = 50;
-
-    printf("nx_main: Set window #2 size to (%d,%d)\n", hwnd2.size.w, hwnd2.size.h);
-    ret = nxeg_setsize(hwnd2.hwnd, &hwnd2.size);
-    if (ret < 0)
-    {
-        goto errout_with_hwnd2;
-    }
-
     /* Sleep a bit -- both so that we can see the result of the above operations
     * but also, in the multi-user case, so that the server can get a chance to
     * actually do them!
     */
-
-    printf("nx_main: Sleeping\n\n");
-    sleep(1);
-
     /* Set the position of window #1 */
 
     hwnd1.pt.x = 0; //左上角
@@ -636,28 +669,11 @@ int main(int argc, FAR char *argv[])
         goto errout_with_hwnd1;
     }
 
-    /* Set the position of window #2 */
-
-    hwnd2.pt.x = 650; //左上角
-    hwnd2.pt.y = 50; //左上角
-
-    printf("nx_main: Set window #2 position to (%d,%d)\n", hwnd2.pt.x, hwnd2.pt.y);
-    ret = nxeg_setposition(hwnd2.hwnd, &hwnd2.pt);
-    if (ret < 0)
-    {
-        goto errout_with_hwnd2;
-    }
-
-    /* Sleep a bit */
-
-    printf("nx_main: Sleeping\n\n");
-    sleep(1);
-
     /* Open the toolbar */
 
     #ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
     printf("nx_main: Add toolbar to window #1\n");
-    ret = nxeq_opentoolbar(hwnd1.hwnd, CONFIG_EXAMPLES_NX_TOOLBAR_HEIGHT, &g_snake_tbcb, &hwnd1.g_wstate);
+    ret = nxeq_opentoolbar(hwnd1.hwnd, CONFIG_EXAMPLES_NX_TOOLBAR_HEIGHT, &g_snake_tbcb, &hwnd1.g_wstate); //TODO:顶部增加退出按钮
     if (ret < 0)
     {
         goto errout_with_hwnd1;
@@ -669,57 +685,52 @@ int main(int argc, FAR char *argv[])
     sleep(1);
     #endif
 
-
-    /* Give keyboard input to the top window -- should be window #1 */
-
-    #ifdef CONFIG_NX_KBD
-    printf("nx_main: Send keyboard input: %s\n", g_kbdmsg2);
-    ret = nx_kbdin(g_snake_hnx, strlen((FAR const char *)g_kbdmsg2), g_kbdmsg2);
-    if (ret < 0)
-    {
-        printf("nx_main: nx_kbdin failed: %d\n", errno);
-        goto errout_with_hwnd1;
-    }
-
-    sleep(2);
-    ret = nx_kbdin(g_snake_hnx, strlen((FAR const char *)g_kbdmsg3), g_kbdmsg3);
-    if (ret < 0)
-    {
-        printf("nx_main: nx_kbdin failed: %d\n", errno);
-        goto errout_with_hwnd2;
-    }
+    nxeg_draw_exit_button(hwnd1.hwnd);
 
     /* Sleep a bit */
 
-    printf("nx_main: Sleeping\n\n");
-    sleep(1);
-    #endif
+    /* 创建贪吃蛇显示任务 */
+    /* 创建贪吃蛇方向检测任务 */
+    ret = snake(g_snake_hnx,&hwnd1,&hwnd2);  //检测返回，有问题直接到窗口销毁退出
+    if(ret < 0)
+    {
+      goto errout_with_hwnd2;
+    }
 
-    /* Sleep a bit */
+    /* 创建触控检测线程 */
+    ret = touch();
+    if(ret <0)
+    {
+      goto out_close;
+    }
 
-    printf("nx_main: Sleeping\n\n");
-    sleep(1);
-
-    ////////////////////////////////////////////////
-    snake(g_snake_hnx,&hwnd1,&hwnd2);
-
-    // sleep(2);
-    // nxeg_closewindow(hwnd1, &g_wstate[0]);
-    // exit(0);
-
-
-    touch();
-
-    sleep(1);
-    ///////////////////////////////////////////////////
+    pthread_join(Snake_t1,NULL);//等待线程结束
+    struct nxgl_rect_s TempRect;
 
    /* Close the window2 */
+    out_close:
+    printf("close pthread\n");
+    // pthread_cancel(Snake_t1);
+    pthread_cancel(Snake_t2);
+    // pthread_cancel(Touch_t1);
+    // sleep(5);
+
     errout_with_hwnd2:
     printf("nx_main: Close window #2\n");
     nxeg_closewindow(hwnd2.hwnd, &hwnd2.g_wstate);
 
     /* Close the window1 */
     errout_with_hwnd1:
+    //todo:恢复背景色
+    TempRect.pt1.x = 0;
+    TempRect.pt1.y = 0;
+    TempRect.pt2.x = 800;
+    TempRect.pt2.y = 480;
+    ret = nx_fill(hwnd1.hwnd, &TempRect, 0x07e2);
+    if (ret < 0)
+    {
+        printf("nx_main: nx_fill failed: %d\n", errno);
+    }
     printf("nx_main: Close window #1\n");
     nxeg_closewindow(hwnd1.hwnd, &hwnd1.g_wstate);
 
@@ -730,5 +741,6 @@ int main(int argc, FAR char *argv[])
     nx_disconnect(g_snake_hnx);
 
     errout:
+    exit(0);
     return g_exitcode;
 }

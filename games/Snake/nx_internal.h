@@ -46,7 +46,7 @@
 #endif
 
 #ifndef CONFIG_EXAMPLES_NX_VPLANE
-#    define CONFIG_EXAMPLES_NX_VPLANE 0
+#    define CONFIG_EXAMPLES_NX_VPLANE 1
 #endif
 
 #ifndef CONFIG_EXAMPLES_NX_BPP
@@ -77,7 +77,8 @@
 #  if CONFIG_EXAMPLES_NX_BPP == 24 || CONFIG_EXAMPLES_NX_BPP == 32
 #    define CONFIG_EXAMPLES_NX_COLOR2 0x00dcdcdc
 #  elif CONFIG_EXAMPLES_NX_BPP == 16
-#    define CONFIG_EXAMPLES_NX_COLOR2 0xdefb
+// #    define CONFIG_EXAMPLES_NX_COLOR2 0xdefb
+#    define CONFIG_EXAMPLES_NX_COLOR2 0x01fb
 #  else
 #    define CONFIG_EXAMPLES_NX_COLOR2 '2'
 #  endif
@@ -220,7 +221,8 @@ struct nxhw_handle
   struct nxeg_state_s g_wstate;
   struct nxgl_size_s size; 
   struct nxgl_point_s pt;
-  NXEGWINDOW (*nxeg_openwindow)(FAR struct nxeg_state_s *state); /* 开启窗口 */
+  void (*nxeg_initstate)(FAR struct nxeg_state_s *st, int wnum, nxgl_mxpixel_t color);
+  NXEGWINDOW (*nxeg_openwindow)(FAR const struct nx_callback_s *cb, FAR struct nxeg_state_s *state); /* 开启窗口 */
   int (*nxeg_closewindow)(NXEGWINDOW hwnd, FAR struct nxeg_state_s *state); /* 关闭窗口 */
   int (*nxeg_setsize)(NXEGWINDOW hwnd, FAR struct nxgl_size_s *size); /* 设置尺寸 */
   int (*nxeg_setposition)(NXEGWINDOW hwnd, FAR struct nxgl_point_s *pos) /* 设置位置 */

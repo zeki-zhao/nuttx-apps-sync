@@ -6,5 +6,7 @@ extern struct touch_sample_s Snake_Touch;
 
 int touch(void);
 
+void* touch_detect(const void *arg);
+
 
 #endif
