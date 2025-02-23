@@ -74,8 +74,6 @@
 
 static int g_exitcode = NXEXIT_SUCCESS;
 
-static struct nxeg_state_s g_wstate[2];
-
 #ifdef CONFIG_NX_KBD
 static const uint8_t g_kbdmsg2[] = "Hello,zeki!";
 static const uint8_t g_kbdmsg3[] = "Hello,world";
