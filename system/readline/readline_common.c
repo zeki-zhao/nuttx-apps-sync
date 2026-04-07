@@ -511,7 +511,6 @@ ssize_t readline_common(FAR struct rl_common_s *vtbl, FAR char *buf,
        */
 
       int ch = RL_GETC(vtbl);
-      Nxterm_CallBack_Kdbin(1, &ch); //TODO:更适合放到接收中断中
 
       /* Check for end-of-file or read error */
 

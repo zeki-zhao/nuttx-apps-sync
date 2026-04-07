@@ -201,7 +201,7 @@ static int nxterm_task(int argc, char **argv)
 /****************************************************************************
  * Name: nxterm_input_listener
  ****************************************************************************/
-static void nxterm_input_listener(int argc, char **argv)
+static int nxterm_input_listener(int argc, char **argv)
 {
   int status = 0;
   int nxterm_input_test_fd;
@@ -229,6 +229,8 @@ static void nxterm_input_listener(int argc, char **argv)
         }
     }
   }
+
+  return 0;
 }
 
 
@@ -460,11 +462,5 @@ errout_with_nx:
 
 errout:
   return EXIT_FAILURE;
-}
-
-void Nxterm_CallBack_Kdbin(uint8_t nCh,FAR const uint8_t *str)
-{
-  // The argument must be the CCallback instance
-  nxterm_kbdin(g_nxterm_vars.hdrvr, str, nCh);
 }
 

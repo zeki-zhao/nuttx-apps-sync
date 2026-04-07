@@ -6,7 +6,7 @@
 #
 
 menu "Industrial Applications"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/industry/abnt_codi/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/industry/foc/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/industry/scpi/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/industry/abnt_codi/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/industry/foc/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/industry/scpi/Kconfig"
 endmenu # Industrial Applications

@@ -6,7 +6,7 @@
 #
 
 menu "Audio Utility libraries"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/audioutils/fmsynth/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/audioutils/mml_parser/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/audioutils/nxaudio/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/audioutils/fmsynth/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/audioutils/mml_parser/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/audioutils/nxaudio/Kconfig"
 endmenu # Audio Utility libraries

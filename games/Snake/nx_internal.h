@@ -214,6 +214,7 @@ struct nxeg_state_s
 #endif
 };
 
+
 /* 窗口操作句柄 */
 struct nxhw_handle
 {

@@ -6,6 +6,6 @@
 #
 
 menu "Bluetooth applications"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/wireless/bluetooth/btsak/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/wireless/bluetooth/nimble/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/wireless/bluetooth/btsak/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/wireless/bluetooth/nimble/Kconfig"
 endmenu # Bluetooth applications

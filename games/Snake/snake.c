@@ -59,6 +59,8 @@ struct nxhw_handle *g_hwnd_score = NULL;
 static struct Snake *head = NULL;      //链表头，蛇尾
 static struct Snake *tail = NULL;        //链表尾，蛇头
 static int Score = 0;           //分数
+static nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES];
+
 struct Snake food;              //食物
 int key;                        //记录键盘输入值
 int dir;                        //记录输入的方向键
@@ -67,6 +69,9 @@ int dir;                        //记录输入的方向键
 extern pthread_t Snake_t1;
 extern pthread_t Snake_t2;
 extern struct nxterm_state_s g_nxterm_vars;
+
+void Snake_draw_squares(NXEGWINDOW *hwnd,int16_t x,int16_t y,int16_t size, uint16_t color);
+void Snake_draw_rectangle(NXEGWINDOW *hwnd,int16_t x1,int16_t y1,int16_t x2, int16_t y2, uint16_t color);
 
 ///////////////////////////////////Snake/////////////////////////////////////////
 
@@ -186,7 +191,8 @@ void Snake_draw_squares(NXEGWINDOW *hwnd,int16_t x,int16_t y,int16_t size, uint1
     TempRect.pt1.y = y;
     TempRect.pt2.x = x+size;
     TempRect.pt2.y = y+size;
-    ret = nx_fill(hwnd, &TempRect, color);
+    nxgl_color[0] = 0x07e2;
+    ret = nx_fill(hwnd, &TempRect, nxgl_color);
     if (ret < 0)
     {
         printf("nx_main: nx_fill failed: %d\n", errno);
@@ -202,7 +208,8 @@ void Snake_draw_rectangle(NXEGWINDOW *hwnd,int16_t x1,int16_t y1,int16_t x2, int
     TempRect.pt1.y = y1;
     TempRect.pt2.x = x2;
     TempRect.pt2.y = y2;
-    ret = nx_fill(hwnd, &TempRect, color);
+    nxgl_color[0] = 0x07e2;
+    ret = nx_fill(hwnd, &TempRect, nxgl_color);
     if (ret < 0)
     {
         printf("nx_main: nx_fill failed: %d\n", errno);
@@ -349,7 +356,6 @@ void moveSnake(NXEGWINDOW *hwnd, struct nxhw_handle *hwnd_score)
 
 void signal_handler(int signum) 
 {
-    int ret;
     printf("Thread received signal: %d\n", signum);
     struct Snake *p;            //临时变量，指向蛇的链表头
     while(head != NULL)         //当链表头不为空时进入，用于释放蛇当前的链表占用内存空间
@@ -366,11 +372,10 @@ void signal_handler(int signum)
 
 
 /*地图界面刷新线程函数*/
-void* refreshjiemian(const void *arg)
+void* refreshjiemian(void *arg)
 {
-    static int temp = 0;
     struct nxhw_handle **nxhw_handle_set; //二级指针
-    nxhw_handle_set = (struct nxhw_handle *)arg; //指针数组
+    nxhw_handle_set = (struct nxhw_handle **)arg; //指针数组
     printf("nxhw_handle_set addr:%p\n",(void *)nxhw_handle_set);
     
     // struct nxhw_handle *hwnd_main = nxhw_handle_set[0];
@@ -433,7 +438,7 @@ int Snake_Get_Dir(void)
 }
 
 /*键盘方向输入监测线程函数*/
-void* changeDir()
+static void* changeDir(void *arg)
 {
     while(1)
     {

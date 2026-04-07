@@ -6,5 +6,5 @@
 #
 
 menu "Math Library Support"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/math/libtommath/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/math/libtommath/Kconfig"
 endmenu # Math Library Support

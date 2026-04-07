@@ -148,7 +148,9 @@ static void nxeg_draw_exit_button(NXEGWINDOW hwnd)
     TempRect.pt1.y = 0;
     TempRect.pt2.x = 800;
     TempRect.pt2.y = 20;
-    ret = nx_fill(hwnd, &TempRect, 0x07e2);
+    nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES];
+    nxgl_color[0] = 0x07e2;
+    ret = nx_fill(hwnd, &TempRect, nxgl_color);
     if (ret < 0)
     {
         printf("nx_main: nx_fill failed: %d\n", errno);
@@ -726,7 +728,9 @@ int main(int argc, FAR char *argv[])
     TempRect.pt1.y = 0;
     TempRect.pt2.x = 800;
     TempRect.pt2.y = 480;
-    ret = nx_fill(hwnd1.hwnd, &TempRect, 0x07e2);
+    nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES];
+    nxgl_color[0] = 0x07e2;
+    ret = nx_fill(hwnd1.hwnd, &TempRect, nxgl_color);
     if (ret < 0)
     {
         printf("nx_main: nx_fill failed: %d\n", errno);

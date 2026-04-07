@@ -6,7 +6,7 @@
 #
 
 menu "MCUboot Examples"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/examples/mcuboot/slot_confirm/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/examples/mcuboot/swap_test/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/examples/mcuboot/update_agent/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/examples/mcuboot/slot_confirm/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/examples/mcuboot/swap_test/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/examples/mcuboot/update_agent/Kconfig"
 endmenu # MCUboot Examples

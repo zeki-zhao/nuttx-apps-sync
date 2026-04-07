@@ -6,5 +6,5 @@
 #
 
 menu "Benchmark Applications"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/benchmarks/coremark/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/benchmarks/coremark/Kconfig"
 endmenu # Benchmark Applications

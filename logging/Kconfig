@@ -6,6 +6,6 @@
 #
 
 menu "Logging Utilities"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/logging/embedlog/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/logging/nxscope/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/logging/embedlog/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/logging/nxscope/Kconfig"
 endmenu # Logging Utilities

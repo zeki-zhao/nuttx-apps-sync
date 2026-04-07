@@ -6,7 +6,7 @@
 #
 
 menu "Machine Learning Support"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/mlearning/cmsis/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/mlearning/darknet/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/mlearning/libnnablart/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/mlearning/cmsis/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/mlearning/darknet/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/mlearning/libnnablart/Kconfig"
 endmenu # Machine Learning Support

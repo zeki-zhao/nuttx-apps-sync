@@ -6,8 +6,8 @@
 #
 
 menu "IEEE 802.15.4 applications"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/wireless/ieee802154/i8sak/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/wireless/ieee802154/i8shark/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/wireless/ieee802154/libmac/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/wireless/ieee802154/libutils/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/wireless/ieee802154/i8sak/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/wireless/ieee802154/i8shark/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/wireless/ieee802154/libmac/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/wireless/ieee802154/libutils/Kconfig"
 endmenu # IEEE 802.15.4 applications

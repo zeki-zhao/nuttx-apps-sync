@@ -6,8 +6,8 @@
 #
 
 menu "Cryptography Library Support"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/crypto/libtomcrypt/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/crypto/mbedtls/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/crypto/tinycrypt/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/crypto/wolfssl/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/crypto/libtomcrypt/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/crypto/mbedtls/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/crypto/tinycrypt/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/crypto/wolfssl/Kconfig"
 endmenu # Cryptography Library Support

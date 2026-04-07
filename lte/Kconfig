@@ -6,6 +6,6 @@
 #
 
 menu "LTE Libraries and NSH Add-Ons"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/lte/alt1250/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/lte/lapi/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/lte/alt1250/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/lte/lapi/Kconfig"
 endmenu # LTE Libraries and NSH Add-Ons

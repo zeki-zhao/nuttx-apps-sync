@@ -6,8 +6,8 @@
 #
 
 menu "LUA Modules"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/interpreters/luamodules/cjson/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/interpreters/luamodules/lfs/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/interpreters/luamodules/luasyslog/Kconfig"
-source "/home/zeki/workspace/NuttX/nuttxspace/Nuttx_Stm32F429/apps/interpreters/luamodules/luv/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/interpreters/luamodules/cjson/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/interpreters/luamodules/lfs/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/interpreters/luamodules/luasyslog/Kconfig"
+source "/home/zeki/workspace/NuttX/nuttxspace/apps/interpreters/luamodules/luv/Kconfig"
 endmenu # LUA Modules

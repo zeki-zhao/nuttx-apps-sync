@@ -1,1 +1,0 @@
-{ "nxtext", SCHED_PRIORITY_DEFAULT, 2048, nxtext_main },
