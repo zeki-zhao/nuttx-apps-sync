@@ -1,5 +1,5 @@
 /**
-*   @file   snake.h
+*   @file   snake_logic.h
 *
 *   @{ 
 */
@@ -8,8 +8,8 @@
 *   Author               : zeki_zhao@163.com
 *   All Rights Reserved.
 ***********************************************************************************************************************/
-#ifndef __SNAKE_H
-#define __SNAKE_H
+#ifndef __SNAKE_LOGIC_H
+#define __SNAKE_LOGIC_H
 
 #ifdef __cplusplus
 extern "C"{
@@ -26,9 +26,8 @@ extern "C"{
 
 #include <stdint.h>
 #include <stdbool.h>
-
-
-#ifdef CONFIG_GAMES_SNAKES
+#include <pthread.h>
+#include "nx_internal.h"
 
 
 /*add user code*/
@@ -37,9 +36,9 @@ extern "C"{
 /***********************************************************************************************************************
 *                                            SOURCE FILE VERSION INFORMATION
 ***********************************************************************************************************************/
-#define SNAKE_SW_MAJOR_VERSION             0
-#define SNAKE_SW_MINOR_VERSION             0
-#define SNAKE_SW_PATCH_VERSION             0
+#define SNAKE_LOGIC_SW_MAJOR_VERSION             0
+#define SNAKE_LOGIC_SW_MINOR_VERSION             0
+#define SNAKE_LOGIC_SW_PATCH_VERSION             0
 
 
 /***********************************************************************************************************************
@@ -61,24 +60,30 @@ extern "C"{
 *                                              STRUCTURES AND OTHER TYPEDEFS
 ***********************************************************************************************************************/
 
+/***********************************************************************************************************************
+*                                              GLOBAL VARIABLE PROTOTYPES
+***********************************************************************************************************************/
+
+extern pthread_t Snake_t1;
+extern pthread_t Snake_t2;
 
 /***********************************************************************************************************************
 *                                              GLOBAL FUNCTION PROTOTYPES
 ***********************************************************************************************************************/
 
+int snake_logic(NXHANDLE *hnx,struct nxhw_handle *hwnd,struct nxhw_handle *hwnd_score);
+void Snake_draw_squares(NXEGWINDOW *hwnd,int16_t x,int16_t y,int16_t size, uint16_t color);
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
-int snake_initialize(void);
+int snake_logic_initialize(void);
 
-
-#endif /* CONFIG_SNAKE */
+#endif /* CONFIG_SNAKE_LOGIC */
 
 #ifdef __cplusplus
 }
-#endif
 
-#endif /* __SNAKE_H */
+#endif /* __SNAKE_LOGIC_H */
 /** @} */

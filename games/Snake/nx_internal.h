@@ -226,7 +226,7 @@ struct nxhw_handle
   NXEGWINDOW (*nxeg_openwindow)(FAR const struct nx_callback_s *cb, FAR struct nxeg_state_s *state); /* 开启窗口 */
   int (*nxeg_closewindow)(NXEGWINDOW hwnd, FAR struct nxeg_state_s *state); /* 关闭窗口 */
   int (*nxeg_setsize)(NXEGWINDOW hwnd, FAR struct nxgl_size_s *size); /* 设置尺寸 */
-  int (*nxeg_setposition)(NXEGWINDOW hwnd, FAR struct nxgl_point_s *pos) /* 设置位置 */
+  int (*nxeg_setposition)(NXEGWINDOW hwnd, FAR struct nxgl_point_s *pos); /* 设置位置 */
 };
 
 /****************************************************************************

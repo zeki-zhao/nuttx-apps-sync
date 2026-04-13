@@ -1,197 +1,180 @@
-// #include <curses.h>
-#include <stdlib.h>
-#include <pthread.h>
+/**
+*   @file   snake.c
+***********************************************************************************************************************/
+#include <fixedmath.h>
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+
+/***********************************************************************************************************************
+*                                                     INCLUDE FILES
+* 1) system and project includes
+* 2) needed interfaces from external units
+* 3) internal and external interfaces from this unit
+***********************************************************************************************************************/
+#include <nuttx/config.h>
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+#include <debug.h>
+
+
+#include <sys/types.h>
+#include <sys/boardctl.h>
+
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <nuttx/video/fb.h>
-#include <fcntl.h> // 文件操作符
+#include <unistd.h>
+#include <string.h>
+#include <sched.h>
+#include <pthread.h>
+#include <errno.h>
+#include <debug.h>
 
-/*显示库*/
+#include <nuttx/arch.h>
+#include <nuttx/board.h>
+
+#include <nuttx/nx/nx.h>
+#include <nuttx/nx/nxtk.h>
+#include <nuttx/nx/nxfonts.h>
 #include <nuttx/nx/nxglib.h>
+
 #include "nx_internal.h"
+
 #include "touch.h"
-#include "../examples/nxhello/nx2Snake.h"
-
-#define PIXEL_SIZE (3) 
-
-#define BOUNDARY_SIZE 3
-
-#define UP_BOUNDARY (40)
-#define DOWN_BOUNDARY (480-10)
-#define LEFT_BOUNDARY (40+150)
-#define RIGHT_BOUNDARY (780)
-
-#define BUTTON_SIZE (50)
-#define UP_BUTTON_LOCATION_X (75)
-#define UP_BUTTON_LOCATION_Y (310)
-#define DOWN_BUTTON_LOCATION_X (75)
-#define DOWN_BUTTON_LOCATION_Y (410) 
-#define LEFT_BUTTON_LOCATION_X (25) 
-#define LEFT_BUTTON_LOCATION_Y (360)
-#define RIGHT_BUTTON_LOCATION_X (125)
-#define RIGHT_BUTTON_LOCATION_Y (360)
+#include "snake_logic.h"
 
 
-#define  UP     1
-#define  DOWN  -1
-#define  LEFT   2
-#define  RIGHT -2
+/* touch.c  */
+#include <stdbool.h>
+#include <sys/types.h>
+#include <fcntl.h>
+// #include <nuttx/analog/ioctl.h>
+#include <syslog.h>
 
-/*蛇和食物的结构体*/
-struct Snake
+#include <sys/ioctl.h>
+#include <nuttx/i2c/i2c_master.h>
+#include <nuttx/input/gt9xx.h>
+#include <nuttx/../sys/poll.h>
+
+#include <nuttx/input/touchscreen.h>
+
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sys/mman.h>
+#include <unistd.h>
+
+#include "snake.h"
+
+#ifdef CONFIG_GAMES_SNAKES
+/*add user code*/
+
+
+/***********************************************************************************************************************
+*                                            SOURCE FILE VERSION INFORMATION
+***********************************************************************************************************************/
+#define SNAKE_SW_MAJOR_VERSION_C             0
+#define SNAKE_SW_MINOR_VERSION_C             0
+#define SNAKE_SW_PATCH_VERSION_C             0
+
+/***********************************************************************************************************************
+*                                                  FILE VERSION CHECKS
+***********************************************************************************************************************/
+#if ((SNAKE_SW_MAJOR_VERSION_C != SNAKE_SW_MAJOR_VERSION) || \
+     (SNAKE_SW_MINOR_VERSION_C != SNAKE_SW_MINOR_VERSION) || \
+     (SNAKE_SW_PATCH_VERSION_C != SNAKE_SW_PATCH_VERSION))
+#error "Software Version Numbers of snake.c and snake.h are different"
+#endif
+
+
+/***********************************************************************************************************************
+*                                                   DEFINES AND MACROS
+***********************************************************************************************************************/
+/* Configuration ************************************************************/
+/* If not specified, assume that the hardware supports one video plane */
+
+#ifndef CONFIG_EXAMPLES_NX_VPLANE
+#  define CONFIG_EXAMPLES_NX_VPLANE 0
+#endif
+
+/* If not specified, assume that the hardware supports one LCD device */
+
+#ifndef CONFIG_EXAMPLES_NX_DEVNO
+#  define CONFIG_EXAMPLES_NX_DEVNO 0
+#endif
+
+/***********************************************************************************************************************
+*                                                        ENUMS
+***********************************************************************************************************************/
+
+
+/***********************************************************************************************************************
+*                                              STRUCTURES AND OTHER TYPEDEFS
+***********************************************************************************************************************/
+
+
+/***********************************************************************************************************************
+*                                              STATIC VARIABLE DECLARATIONS
+***********************************************************************************************************************/
+static int g_exitcode = NXEXIT_SUCCESS;
+
+/***********************************************************************************************************************
+*                                              GLOBAL VARIABLE DECLARATIONS
+***********************************************************************************************************************/
+struct pollfd touch_fds;
+pthread_t Snake_t1;               //创建线程变量t1
+pthread_t Snake_t2;               //创建线程变量t2
+pthread_t Touch_t1;               //创建线程变量t1
+
+NXHANDLE g_snake_fonthandle = NULL; //字体句柄
+NXHANDLE g_snake_hnx = NULL; //窗口句柄
+nxgl_coord_t g_snake_xres;
+nxgl_coord_t g_snake_yres;
+
+/* The screen resolution */
+
+nxgl_coord_t g_snake_xres;
+nxgl_coord_t g_snake_yres;
+
+bool b_snake_haveresolution = false;
+bool g_snake_connected = false;
+sem_t g_snake_semevent = {0};
+
+/* Colors used to fill window 1 & 2 */
+
+nxgl_mxpixel_t g_snake_color1[CONFIG_NX_NPLANES];
+nxgl_mxpixel_t g_snake_color2[CONFIG_NX_NPLANES];
+#ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
+nxgl_mxpixel_t g_snake_tbcolor[CONFIG_NX_NPLANES];
+#endif
+
+int mytouch_fd;/* 触控设备文件号 */
+
+/***********************************************************************************************************************
+*                                               STATIC FUNCTION PROTOTYPES
+***********************************************************************************************************************/
+
+
+/***********************************************************************************************************************
+*                                              STATIC FUNCTION DEFINITIONS
+***********************************************************************************************************************/
+static void nxeg_draw_exit_button(NXEGWINDOW hwnd)
 {
-    int x;  //x位置
-    int y; //y位置 
-    struct Snake *next;
-};
-
-enum{
-    KEY_UP,
-    KEY_DOWN,
-    KEY_LEFT,
-    KEY_RIGHT,
-    ALL_KEY
-};
-
-
-struct nxhw_handle *g_hwnd_main = NULL;
-struct nxhw_handle *g_hwnd_score = NULL;
-static struct Snake *head = NULL;      //链表头，蛇尾
-static struct Snake *tail = NULL;        //链表尾，蛇头
-static int Score = 0;           //分数
-static nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES];
-
-struct Snake food;              //食物
-int key;                        //记录键盘输入值
-int dir;                        //记录输入的方向键
-
-
-extern pthread_t Snake_t1;
-extern pthread_t Snake_t2;
-extern struct nxterm_state_s g_nxterm_vars;
-
-void Snake_draw_squares(NXEGWINDOW *hwnd,int16_t x,int16_t y,int16_t size, uint16_t color);
-void Snake_draw_rectangle(NXEGWINDOW *hwnd,int16_t x1,int16_t y1,int16_t x2, int16_t y2, uint16_t color);
-
-///////////////////////////////////Snake/////////////////////////////////////////
-
-/*输入横坐标和纵坐标值，判断是否存在蛇的链表节点*/
-int hasSnakeNode(int i,int j)
-{
-    struct Snake *p;            //临时变量，用于记录蛇的链表表头
-    p = head;
-
-    while(p != NULL)            //当链表头不为空时，进入循环
-    {
-        if(p->y == i && p->x == j)
-        {
-            printf("in %s :%d\n",__FILE__,__LINE__);
-            printf("x:%d, y:%d\n",j,i);
-            return 1;           //输入的行纵坐标存在于蛇的链表中时返回1
-        }
-        p = p->next;            //链表头指向下一个节点
-    }
-    return 0;                   //输入的横纵坐标不存在蛇的链表中时返回0
-}
-
-/*食物初始化*/
-void initFoodnode(NXEGWINDOW *hwnd)
-{
-    int x;                     //定义横坐标临时变量
-    int y;                     //定义纵坐标临时变量
-    x = LEFT_BOUNDARY+10+rand()%(RIGHT_BOUNDARY-LEFT_BOUNDARY-10);            //在范围内随机获取横坐标值
-    y = UP_BOUNDARY+10+rand()%(DOWN_BOUNDARY-UP_BOUNDARY-10);             //在范围内随机获取纵坐标值
-
-    Snake_draw_squares(hwnd,food.x-1,food.y-1,2,0x07e2); /* 消除原有食物色块 */
-
-    food.x = x;       
-    food.y = y;   
-    
-    Snake_draw_squares(hwnd,food.x-1,food.y-1,2,CONFIG_EXAMPLES_NX_COLOR2); /* 绘制食物色块 */
-
-    printf("food x:%d, y:%d \n",food.x,food.y);
-}
-
-/*输入横纵坐标判断是否存在食物，用于地图刷新*/
-int hasFoodnode(int i,int j)
-{
-    //食物[x-1,x+1][y-1,y+1] 与蛇头[x-1,x+1][y-1][y+1]重合即可判定
-    if(((food.x<= i && (food.x+2)>= i)&&(food.y<= j && (food.y+2)>= j))
-    || (((food.x-2)<= i && food.x>= i)&&((food.y-2)<= j && food.y>= j)))
-    {
-        return 1;               //吃到食物返回1
-    }
-    return 0;                   //未吃到食物返回0
-}
-
-/* 地图绘制 */
-void gamePic(NXEGWINDOW *hwnd)
-{
-    int y,x;              //行列临时变量
-
-    /* 绘制退出按钮 */
-    // Snake_draw_rectangle(hwnd,750,0,800,50,0x07e2);
-    
-    /*绘制活动空间  */
-    Snake_draw_rectangle(hwnd,LEFT_BOUNDARY,UP_BOUNDARY,RIGHT_BOUNDARY,DOWN_BOUNDARY,0x07e2);
-
-    /* 上键 */
-    Snake_draw_squares(hwnd,UP_BUTTON_LOCATION_X,UP_BUTTON_LOCATION_Y,BUTTON_SIZE,CONFIG_EXAMPLES_NX_TBCOLOR);
-    Snake_draw_squares(hwnd,DOWN_BUTTON_LOCATION_X,DOWN_BUTTON_LOCATION_Y,BUTTON_SIZE,CONFIG_EXAMPLES_NX_TBCOLOR);
-    Snake_draw_squares(hwnd,LEFT_BUTTON_LOCATION_X,LEFT_BUTTON_LOCATION_Y,BUTTON_SIZE,CONFIG_EXAMPLES_NX_TBCOLOR);
-    Snake_draw_squares(hwnd,RIGHT_BUTTON_LOCATION_X,RIGHT_BUTTON_LOCATION_Y,BUTTON_SIZE,CONFIG_EXAMPLES_NX_TBCOLOR);
-
-    for(y=UP_BOUNDARY; y<=DOWN_BOUNDARY; y++) //历遍上下边界
-    {
-        if(y>=UP_BOUNDARY || y<=DOWN_BOUNDARY)
-        {
-            for(x=LEFT_BOUNDARY;x<=RIGHT_BOUNDARY;x++) /* 历遍左右边界 */
-            {
-                if(x==LEFT_BOUNDARY || x==RIGHT_BOUNDARY) /* 画左右边界 */
-                {
-                    Snake_draw_squares(hwnd,x-1,y-1,2,CONFIG_EXAMPLES_NX_TBCOLOR);
-                }
-                else if(hasSnakeNode(y,x)) /* 画蛇身 */
-                {
-                    Snake_draw_squares(hwnd,x-1,y-1,2,CONFIG_EXAMPLES_NX_COLOR2);
-                }
-            }
-        }
-        if(y==UP_BOUNDARY || y==DOWN_BOUNDARY)
-        {
-            for(x=LEFT_BOUNDARY; x<=RIGHT_BOUNDARY; x++)
-            {
-                Snake_draw_squares(hwnd,x-1,y-1,2,CONFIG_EXAMPLES_NX_TBCOLOR); /* 绘制上下边界 */
-            }
-        }
-    }
-    initFoodnode(hwnd);  /* 初始化食物 */
-}
-
-
-static int fbopen(const char * device)
-{
-  int fb = open(device, O_RDWR);
-
-  if (fb < 0)
-    {
-      fprintf(stderr, "Unable to open framebuffer device: %s\n", device);
-      return EXIT_FAILURE;
-    }
-
-  return fb;
-}
-
-void Snake_draw_squares(NXEGWINDOW *hwnd,int16_t x,int16_t y,int16_t size, uint16_t color)
-{
-    // printf("in %s :%d\n",__FILE__,__LINE__);
     int ret;
     struct nxgl_rect_s TempRect;
-    TempRect.pt1.x = x;
-    TempRect.pt1.y = y;
-    TempRect.pt2.x = x+size;
-    TempRect.pt2.y = y+size;
-    nxgl_color[0] = 0x07e2;
+    TempRect.pt1.x = 780;
+    TempRect.pt1.y = 0;
+    TempRect.pt2.x = 796;
+    TempRect.pt2.y = 19;
+    nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES] = {0x0100};
     ret = nx_fill(hwnd, &TempRect, nxgl_color);
     if (ret < 0)
     {
@@ -199,332 +182,581 @@ void Snake_draw_squares(NXEGWINDOW *hwnd,int16_t x,int16_t y,int16_t size, uint1
     }
 }
 
-void Snake_draw_rectangle(NXEGWINDOW *hwnd,int16_t x1,int16_t y1,int16_t x2, int16_t y2, uint16_t color)
+#ifdef CONFIG_NX_XYINPUT
+static void nxeg_drivemouse(void)
 {
-    // printf("in %s :%d\n",__FILE__,__LINE__);
-    int ret;
-    struct nxgl_rect_s TempRect;
-    TempRect.pt1.x = x1;
-    TempRect.pt1.y = y1;
-    TempRect.pt2.x = x2;
-    TempRect.pt2.y = y2;
-    nxgl_color[0] = 0x07e2;
-    ret = nx_fill(hwnd, &TempRect, nxgl_color);
+    nxgl_coord_t x;
+    nxgl_coord_t y;
+    nxgl_coord_t xstep = g_snake_xres / 8;
+    nxgl_coord_t ystep = g_snake_yres / 8;
+
+    for (x = 0; x < g_snake_xres; x += xstep)
+    {
+        for (y = 0; y < g_snake_yres; y += ystep)
+        {
+            printf("nxeg_drivemouse: Mouse left button at (%d,%d)\n", x, y);
+            nx_mousein(g_snake_hnx, x, y, NX_MOUSE_LEFTBUTTON);
+        }
+    }
+}
+#endif
+
+/**
+ * @brief nxeg_initstate
+ * 
+ * @param st 
+ * @param wnum 
+ * @param color 
+ */
+static void nxeg_initstate(FAR struct nxeg_state_s *st, int wnum,
+                           nxgl_mxpixel_t color)
+{
+#ifdef CONFIG_NX_KBD
+    FAR const struct nx_font_s *fontset;
+#endif
+
+    /* Initialize the window number (used for debug output only) and color
+    * (used for redrawing the window)
+    */
+
+    st->wnum     = wnum;
+    st->color[0] = color;
+
+    /* Get information about the font set being used and save this in the
+    * state structure
+    */
+
+#ifdef CONFIG_NX_KBD
+    fontset      = nxf_getfontset(g_snake_fonthandle);
+    st->nchars   = 0;
+    st->nglyphs  = 0;
+    st->height   = fontset->mxheight;
+    st->width    = fontset->mxwidth;
+    st->spwidth  = fontset->spwidth;
+#endif
+}
+
+
+#ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
+/**
+ * @brief nxeg_freestate
+ * 
+ * @param st 
+ */
+static void nxeg_freestate(FAR struct nxeg_state_s *st)
+{
+#ifdef CONFIG_NX_KBD
+    int i;
+
+    if (st){
+        for (i = 0; i < st->nglyphs; i++){
+            if (st->glyph[i].bitmap){
+                free(st->glyph[i].bitmap);
+            }
+            st->glyph[i].bitmap = NULL;
+        }
+        st->nchars = 0;
+    }
+#endif
+}
+#endif
+
+
+#ifdef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline NXEGWINDOW nxeg_openwindow(FAR const struct nx_callback_s *cb,
+                                       FAR struct nxeg_state_s *state)
+{
+    NXEGWINDOW hwnd;
+
+    hwnd = nx_openwindow(g_snake_hnx, 0, cb, (FAR void *)state);
+    if (!hwnd)
+    {
+        printf("nxeg_openwindow: nx_openwindow failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXOPENWINDOW;
+    }
+  return hwnd;
+}
+#else
+static inline NXEGWINDOW nxeg_openwindow(FAR const struct nx_callback_s *cb,
+                                         FAR struct nxeg_state_s *state)
+{
+  NXEGWINDOW hwnd;
+
+    hwnd = nxtk_openwindow(g_snake_hnx, 0, cb, (FAR void *)state);
+    if (!hwnd)
+    {
+        printf("nxeg_openwindow: nxtk_openwindow failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXOPENWINDOW;
+    }
+  return hwnd;
+}
+
+// static inline NXEGWINDOW nxeg_openwindow_noinput(FAR struct nxeg_state_s *state)
+// {
+//   NXEGWINDOW hwnd;
+//   printf("in func %s:%d\n",__func__,__LINE__);
+//   hwnd = nxtk_openwindow(g_snake_hnx, 0, &g_snake_nxcb, (FAR void *)state);
+//   if (!hwnd)
+//     {
+//       printf("nxeg_openwindow: nxtk_openwindow failed: %d\n", errno);
+//       g_exitcode = NXEXIT_NXOPENWINDOW;
+//     }
+//   return hwnd;
+// }
+#endif
+
+#ifdef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline int nxeg_closewindow(NXEGWINDOW hwnd, FAR struct nxeg_state_s *state)
+{
+    int ret = nx_closewindow(hwnd);
     if (ret < 0)
     {
-        printf("nx_main: nx_fill failed: %d\n", errno);
+        printf("nxeg_closewindow: nx_closewindow failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXCLOSEWINDOW;
     }
+  return ret;
 }
-
-/*添加蛇身节点*/
-void addNode()
+#else
+static inline int nxeg_closewindow(NXEGWINDOW hwnd, FAR struct nxeg_state_s *state)
 {
-    struct Snake *new;         //新节点变量
-    new = (struct Snake *)malloc(sizeof(struct Snake));//为新节点开辟内存空间
-
-    switch(dir)                //方向键判断
+    int ret = nxtk_closewindow(hwnd);
+    if (ret < 0)
     {
-        case UP:
-            new->y = tail->y - PIXEL_SIZE;  //向上，行减1，上移 //TODO:为什么增加4个就正常？
-            new->x = tail->x;        //列保持
-            break;
-        case DOWN:
-            new->y = tail->y + PIXEL_SIZE;  //向下，行加1，下移
-            new->x = tail->x;        //列保持不变
-            break;
-        case LEFT:
-            new->y = tail->y;      //行保持不变
-            new->x = tail->x - PIXEL_SIZE;    //向左，列减1，左移
-            break;
-        case RIGHT:
-            new->y = tail->y;      //行保持不变
-            new->x = tail->x + PIXEL_SIZE;    //向右，列加1，右移
-            break;
-        default:
-            break;
+        printf("nxeg_closewindow: nxtk_closewindow failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXCLOSEWINDOW;
+    }
+    nxeg_freestate(state);
+    return ret;
+}
+#endif
+
+#ifdef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline int nxeg_setsize(NXEGWINDOW hwnd, FAR struct nxgl_size_s *size)
+{
+    int ret = nx_setsize(hwnd, size);
+    if (ret < 0)
+    {
+        printf("nxeg_setsize: nx_setsize failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXSETSIZE;
+    }
+  return ret;
+}
+#else
+static inline int nxeg_setsize(NXEGWINDOW hwnd, FAR struct nxgl_size_s *size)
+{
+    int ret = nxtk_setsize(hwnd, size);
+    if (ret < 0)
+    {
+        printf("nxeg_setsize: nxtk_setsize failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXSETSIZE;
+    }
+  return ret;
+}
+#endif
+
+#ifdef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline int nxeg_setposition(NXEGWINDOW hwnd, FAR struct nxgl_point_s *pos)
+{
+    int ret = nx_setposition(hwnd, pos);
+    if (ret < 0)
+    {
+        printf("nxeg_setposition: nx_setposition failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXSETPOSITION;
+    }
+  return ret;
+}
+#else
+static inline int nxeg_setposition(NXEGWINDOW hwnd, FAR struct nxgl_point_s *pos)
+{
+    int ret = nxtk_setposition(hwnd, pos);
+    if (ret < 0)
+    {
+        printf("nxeg_setposition: nxtk_setposition failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXSETPOSITION;
+    }
+    return ret;
+}
+#endif
+
+#ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline int nxeq_opentoolbar(NXEGWINDOW hwnd, nxgl_coord_t height,
+                                   FAR const struct nx_callback_s *cb,
+                                   FAR struct nxeg_state_s *state)
+{
+    int ret;
+    ret = nxtk_opentoolbar(hwnd, height, cb, (FAR void *)state);
+    if (ret < 0)
+    {
+        printf("nxeq_opentoolbar: nxtk_opentoolbar failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXOPENTOOLBAR;
+    }
+    return ret;
+}
+#endif
+
+#ifdef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline int nxeg_lower(NXEGWINDOW hwnd)
+{
+    int ret = nx_lower(hwnd);
+    if (ret < 0)
+    {
+        printf("nxeg_lower: nx_lower failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXLOWER;
+    }
+  return ret;
+}
+#else
+static inline int nxeg_lower(NXEGWINDOW hwnd)
+{
+    int ret = nxtk_lower(hwnd);
+    if (ret < 0)
+    {
+        printf("nxeg_lower: nxtk_lower failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXLOWER;
+    }
+    return ret;
+}
+#endif
+
+#ifdef CONFIG_EXAMPLES_NX_RAWWINDOWS
+static inline int nxeg_raise(NXEGWINDOW hwnd)
+{
+  int ret = nx_raise(hwnd);
+  if (ret < 0)
+    {
+      printf("nxeg_raise: nx_raise failed: %d\n", errno);
+      g_exitcode = NXEXIT_NXRAISE;
+    }
+  return ret;
+}
+#else
+static inline int nxeg_raise(NXEGWINDOW hwnd)
+{
+    int ret = nxtk_raise(hwnd);
+    if (ret < 0)
+    {
+        printf("nxeg_raise: nxtk_raise failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXRAISE;
+    }
+    return ret;
+}
+#endif
+
+static int nxeg_initialize(NXHANDLE* pNxhandle)
+{
+    struct sched_param param;
+    pthread_t thread;
+    int ret;
+    int i;
+
+  /* Initialize window colors */
+
+    for (i = 0; i < CONFIG_NX_NPLANES; i++){
+        g_snake_color1[i]  = CONFIG_EXAMPLES_NX_COLOR1;
+        g_snake_color2[i]  = CONFIG_EXAMPLES_NX_COLOR2;
+#ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
+        g_snake_tbcolor[i] = CONFIG_EXAMPLES_NX_TBCOLOR;
+#endif
     }
 
-    new->next = NULL;           //新节点的下一个节点指向为NULL
-    tail->next = new;           //尾部的下一个节点指向新节点
-    tail = new;                 //新节点复制给尾部节点
-}
-
-/*初始化蛇*/
-void initSnake(NXEGWINDOW *hwnd)
-{
-    struct Snake *p;            //临时变量，指向蛇的链表头
-    dir = RIGHT;                //运动方向初始化为向右
-
-    while(head != NULL)         //当链表头不为空时进入，用于释放蛇当前的链表占用内存空间
-    {
-        p = head;               //p指向链表头
-        head = head->next;      //链表头指向下一个节点
-        Snake_draw_squares(hwnd,(p->x)-1,(p->y)-1,2,0x07e2); //清空原有蛇的颜色   
-        free(p);                //释放链表头内存
+    /* Set the client task priority */
+    param.sched_priority = CONFIG_EXAMPLES_NX_CLIENTPRIO;
+    ret = sched_setparam(0, &param);
+    if (ret < 0){
+        printf("nxeg_initialize: sched_setparam failed: %d\n" , ret);
+        g_exitcode = NXEXIT_SCHEDSETPARAM;
+        return ERROR;
     }
 
-    
-    head = (struct Snake *)malloc(sizeof(struct Snake)); //为链表头开辟新的内存空间
-    head->y = UP_BOUNDARY+PIXEL_SIZE*3;             //链表头行初始值为2
-    head->x = LEFT_BOUNDARY+PIXEL_SIZE*3;              //链表头列初始值为2
-    head->next = NULL;          //链表头的下一个节点指向为NULL
-    tail = head;                //链表尾指向链表头
-    printf("in %s :%d\n",__FILE__,__LINE__);
-
-    addNode();                  //为链表添加新节点
-    addNode();
-    addNode();
-    addNode();
-}
-
-/*节点删除*/
-void deleteNode()
-{
-    struct Snake *p;            //创建临时节点
-    p = head;                    //节点指向链表头
-    head = head->next;          //链表头指向下一个节点
-    free(p);                    //释放p的空间(原链表头)
-}
-
-/*判断蛇是否越界或自残*/
-int ifSnakedie()
-{
-    struct Snake *p;            //创建临时节点
-    p = head;                   //指向链表头
-
-    if((tail->y-BOUNDARY_SIZE)<=UP_BOUNDARY || (tail->x-BOUNDARY_SIZE)<=LEFT_BOUNDARY || (tail->y+BOUNDARY_SIZE)>=DOWN_BOUNDARY || (tail->x+BOUNDARY_SIZE)>=RIGHT_BOUNDARY)
-    {
-        return 1;               //当蛇链表的尾部坐标等于边界值时，返回1
+    /* Start the NX server kernel thread */
+    ret = boardctl(BOARDIOC_NX_START, 0);
+    if (ret < 0){
+        printf("nxeg_initialize: Failed to start the NX server: %d\n", errno);
+        g_exitcode = NXEXIT_TASKCREATE;
+        return ERROR;
     }
 
-    while(p->next != NULL)
-    {
-        if((p->y==tail->y)&&(p->x==tail->x))
+    /* Connect to the server */
+    *pNxhandle = nx_connect();
+    if(*pNxhandle){
+        pthread_attr_t attr;
+
+#ifdef CONFIG_VNCSERVER
+        /* Setup the VNC server to support keyboard/mouse inputs */
+
+        struct boardioc_vncstart_s vnc =
         {
-            return 1;           //当蛇链表其它的节点与尾部节点坐标相同，返回1
+            0, *pNxhandle
+        };
+
+        ret = boardctl(BOARDIOC_VNC_START, (uintptr_t)&vnc);
+        if (ret < 0)
+            {
+            printf("boardctl(BOARDIOC_VNC_START) failed: %d\n", ret);
+            nx_disconnect(*pNxhandle);
+            g_exitcode = NXEXIT_FBINITIALIZE;
+            return ERROR;
+            }
+#endif
+
+       /* Start a separate thread to listen for server events.  This is probably
+        * the least efficient way to do this, but it makes this example flow more
+        * smoothly.
+        */
+
+        pthread_attr_init(&attr);
+        param.sched_priority = CONFIG_GAMES_SNAKES_LISTENERPRIO;
+        pthread_attr_setschedparam(&attr, &param);
+        pthread_attr_setstacksize(&attr, CONFIG_GAMES_SNAKES_STACKSIZE);
+
+        ret = pthread_create(&thread, &attr, nx_snake_listenerthread, pNxhandle);
+        if (ret != 0){
+            printf("nxeg_initialize: pthread_create failed: %d\n", ret);
+            g_exitcode = NXEXIT_PTHREADCREATE;
+            return ERROR;
         }
-        p = p->next;
-    }
 
-    return 0;                   //无越界，无自残，返回0
-}
+       /* Don't return until we are connected to the server */
 
-
-/*刷新分数*/
-void showScore(struct nxhw_handle *hwnd_score)
-{
-    printf("showScore: reopen windows test\n");
-    
-    uint8_t g_kbdmsg[20]= {0};
-    hwnd_score->nxeg_closewindow(hwnd_score->hwnd, &hwnd_score->g_wstate);
-    hwnd_score->nxeg_initstate(&hwnd_score->g_wstate, 2, CONFIG_EXAMPLES_NX_COLOR1);
-    hwnd_score->hwnd = hwnd_score->nxeg_openwindow(&g_snake_nxcb, &hwnd_score->g_wstate);
-    hwnd_score->nxeg_setsize(hwnd_score->hwnd, &hwnd_score->size);
-    hwnd_score->nxeg_setposition(hwnd_score->hwnd, &hwnd_score->pt);
-    sprintf(g_kbdmsg,"Score: %d",Score);
-    nx_kbdin(g_snake_hnx, strlen((FAR const char *)g_kbdmsg), g_kbdmsg);
-}
-
-
-/*蛇移动*/
-void moveSnake(NXEGWINDOW *hwnd, struct nxhw_handle *hwnd_score)
-{
-    addNode(); /* 添加新节点,tail是蛇的头部 */
-    if(ifSnakedie()){   /* 死亡检测：死亡 */
-        printf("die!!!!!\n");
-        Score = 0;
-        showScore(hwnd_score); /* 刷新分数 */
-        initSnake(hwnd);    /* 如果满足越界或者自残条件，重新初始化蛇链表 */
-        initFoodnode(hwnd);   /* 当蛇链表尾节点坐标值和食物坐标值一样，刷新食物位置 */
-    }
-    else
-    { /* 未死亡 */
-        if(hasFoodnode(tail->x,tail->y)) /* 吃到食物了，不删蛇尾 */
-        {
-            Score++;
-            showScore(hwnd_score); /* 刷新分数 */
-            initFoodnode(hwnd);   /* 当蛇链表尾节点坐标值和食物坐标值一样，刷新食物位置 */
+        while (!g_snake_connected){
+            /* Wait for the listener thread to wake us up when we really are connected.*/
+            sem_wait(&g_snake_semevent);
         }
-        else
-        {
-            Snake_draw_squares(hwnd,head->x-1,head->y-1,2,0x07e2); /* 尾部恢复背景色 */
-            deleteNode();   /* 删除蛇链表中的头节点 */
-        }
-        Snake_draw_squares(hwnd,tail->x-1,tail->y-1,2,CONFIG_EXAMPLES_NX_COLOR2); /* 头部新加色块 */
-    }
-}
-
-void signal_handler(int signum) 
-{
-    printf("Thread received signal: %d\n", signum);
-    struct Snake *p;            //临时变量，指向蛇的链表头
-    while(head != NULL)         //当链表头不为空时进入，用于释放蛇当前的链表占用内存空间
-    {
-        p = head;               //p指向链表头
-        head = head->next;      //链表头指向下一个节点
-        free(p);                //释放链表头内存
-    }
-
-    // nxtk_raise(g_nxterm_vars.hwnd);
-
-    pthread_exit(NULL);
-}
-
-
-/*地图界面刷新线程函数*/
-void* refreshjiemian(void *arg)
-{
-    struct nxhw_handle **nxhw_handle_set; //二级指针
-    nxhw_handle_set = (struct nxhw_handle **)arg; //指针数组
-    printf("nxhw_handle_set addr:%p\n",(void *)nxhw_handle_set);
-    
-    // struct nxhw_handle *hwnd_main = nxhw_handle_set[0];
-    // struct nxhw_handle *hwnd_score = nxhw_handle_set[1];
-    // printf("hwnd_main addr:%p\n",(void *)hwnd_main);
-    // printf("hwnd_score addr:%p\n",(void *)hwnd_score);
-    signal(SIGUSR1, signal_handler);
-
-    while(1)
-    {
-        moveSnake(g_hwnd_main->hwnd, g_hwnd_score);           //蛇链表移动
-        usleep(50000);           //线程休眠函数，100ms
-        // pthread_testcancel();//主动设置取消点
-    } 
-}
-
-/*方向函数*/
-void turn(int direction)
-{
-    if(abs(dir) != abs(direction))
-    {
-        dir = direction;        //方向取绝对值比较，当左右运动时只有上下输入才生效
-    }
-}
-
-int Snake_Get_Dir(void)
-{
-    if((Snake_Touch.point->x > UP_BUTTON_LOCATION_X) && 
-        (Snake_Touch.point->x < UP_BUTTON_LOCATION_X + BUTTON_SIZE) && 
-        (Snake_Touch.point->y > UP_BUTTON_LOCATION_Y) && 
-        (Snake_Touch.point->y < UP_BUTTON_LOCATION_Y + BUTTON_SIZE))
-    {
-        usleep(10000);           //线程休眠函数，150ms
-        return KEY_UP; 
-    }else if((Snake_Touch.point->x > DOWN_BUTTON_LOCATION_X) && 
-        (Snake_Touch.point->x < DOWN_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
-        (Snake_Touch.point->y > DOWN_BUTTON_LOCATION_Y) && 
-        (Snake_Touch.point->y < DOWN_BUTTON_LOCATION_Y + BUTTON_SIZE))
-    {
-        usleep(10000);           //线程休眠函数，150ms
-        return KEY_DOWN; 
-    }else if((Snake_Touch.point->x > LEFT_BUTTON_LOCATION_X) && 
-        (Snake_Touch.point->x < LEFT_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
-        (Snake_Touch.point->y > LEFT_BUTTON_LOCATION_Y) && 
-        (Snake_Touch.point->y < LEFT_BUTTON_LOCATION_Y + BUTTON_SIZE))
-    {
-        usleep(10000);           //线程休眠函数，150ms
-        return KEY_LEFT; 
-    }else if((Snake_Touch.point->x > RIGHT_BUTTON_LOCATION_X) && 
-        (Snake_Touch.point->x < RIGHT_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
-        (Snake_Touch.point->y > RIGHT_BUTTON_LOCATION_Y) && 
-        (Snake_Touch.point->y < RIGHT_BUTTON_LOCATION_Y + BUTTON_SIZE))
-    {
-
-        usleep(10000);           //线程休眠函数，150ms
-        return KEY_RIGHT; 
     }else{
-        return -1;
+        printf("nxeg_initialize: nx_connect failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXCONNECT;
+        return ERROR;
     }
+
+  return OK;
 }
 
-/*键盘方向输入监测线程函数*/
-static void* changeDir(void *arg)
+/***********************************************************************************************************************
+*                                              GLOBAL FUNCTION DEFINITIONS
+***********************************************************************************************************************/
+
+/**
+ * @brief nxeg_initialize
+ * 
+ * @return int 
+ */
+int snake_initialize(void)
 {
+  syslog(LOG_INFO, "snake initialize\n");
+  return 0;
+}
+
+/**
+ * @brief 
+ * 
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
+int main(int argc, FAR char *argv[])
+{
+    printf("hello,world\n");
+    // nxgl_mxpixel_t color;
+    nxgl_mxpixel_t color[CONFIG_NX_NPLANES] = {CONFIG_EXAMPLES_NX_BGCOLOR};
+    int16_t ret;
+    struct nxhw_handle hwnd1 ={
+      .nxeg_initstate = nxeg_initstate,
+      .nxeg_openwindow = nxeg_openwindow,
+      .nxeg_closewindow = nxeg_closewindow,
+      .nxeg_setsize = nxeg_setsize,
+      .nxeg_setposition = nxeg_setposition
+    };
+    struct nxhw_handle hwnd2 ={
+      .nxeg_initstate = nxeg_initstate,
+      .nxeg_openwindow = nxeg_openwindow,
+      .nxeg_closewindow = nxeg_closewindow,
+      .nxeg_setsize = nxeg_setsize,
+      .nxeg_setposition = nxeg_setposition
+    };
+
+    // Initialize
+    // 启动NX server线程，启动listener线程，连接NX server
+    ret = nxeg_initialize(&g_snake_hnx);
+    printf("nx_main: NX handle=%p\n", g_snake_hnx);
+    if (!g_snake_hnx || ret < 0)
+    {
+        printf("nx_main: Failed to get NX handle: %d\n", errno);
+        g_exitcode = NXEXIT_NXOPEN;
+        goto errout;
+    }
+
+    // Get the default font handle
+    g_snake_fonthandle = nxf_getfonthandle(CONFIG_EXAMPLES_NX_FONTID);
+    if (!g_snake_fonthandle)
+    {
+        printf("nx_main: Failed to get font handle: %d\n", errno);
+        g_exitcode = NXEXIT_FONTOPEN;
+        goto errout;
+    }
+
+    // Set the background to the configured background color
+    ret = nx_setbgcolor(g_snake_hnx, color);
+    if (ret < 0)
+    {
+        printf("nx_main: nx_setbgcolor failed: %d\n", errno);
+        g_exitcode = NXEXIT_NXSETBGCOLOR;
+        goto errout_with_nx;
+    }
+
+    /* *************Create window#1************ */
+    printf("nx_main: Create window #1\n");
+    nxeg_initstate(&hwnd1.g_wstate, 1, CONFIG_EXAMPLES_NX_COLOR1);
+    hwnd1.hwnd = nxeg_openwindow(&g_snake_nxcb, &hwnd1.g_wstate);
+    printf("nx_main: hwnd1=%p\n", hwnd1.hwnd);
+    if (!hwnd1.hwnd)
+    {
+        goto errout_with_nx;
+    }
+
+    // Wait until we have the screen resolution //等待窗口创建处理完成
+    while (!b_snake_haveresolution)
+    {
+        sem_wait(&g_snake_semevent);
+    }
+
+    // Set the size of the window 1
+    hwnd1.size.w = g_snake_xres;
+    hwnd1.size.h = g_snake_yres-5;
+
+    printf("nx_main: Set window #1 size to (%d,%d)\n", hwnd1.size.w, hwnd1.size.h);
+    ret = nxeg_setsize(hwnd1.hwnd, &hwnd1.size);
+    if (ret < 0)
+    {
+        goto errout_with_hwnd1;
+    }
+   
+    // Set the position of window #1
+    hwnd1.pt.x = 0; //左上角
+    hwnd1.pt.y = 0; //左上角
+
+    printf("nx_main: Set window #1 position to (%d,%d)\n", hwnd1.pt.x, hwnd1.pt.y);
+    ret = nxeg_setposition(hwnd1.hwnd, &hwnd1.pt);
+    if (ret < 0)
+    {
+        goto errout_with_hwnd1;
+    }
+
+    /* Open the toolbar */
+    #ifndef CONFIG_EXAMPLES_NX_RAWWINDOWS
+    printf("nx_main: Add toolbar to window #1\n");
+    ret = nxeq_opentoolbar(hwnd1.hwnd, CONFIG_EXAMPLES_NX_TOOLBAR_HEIGHT, &g_snake_tbcb, &hwnd1.g_wstate); //TODO:顶部增加退出按钮
+    if (ret < 0)
+    {
+        goto errout_with_hwnd1;
+    }
+
+    //延时等待窗口创建完成
+    sleep(1);
+    nxeg_draw_exit_button(hwnd1.hwnd);
+    #endif
+    /* ************************************* */
+
+
+    /* **********Create window #2*********** */
+    nxeg_initstate(&hwnd2.g_wstate, 2, 0xffff);
+    hwnd2.hwnd = nxeg_openwindow(&g_snake_nxcb, &hwnd2.g_wstate); //分数窗口
+    printf("nx_main: hwnd2=%p\n", hwnd2.hwnd);
+    if (!hwnd2.hwnd)
+    {
+        goto errout_with_nx;
+    }
+    // Wait until we have the screen resolution 
+    while (!b_snake_haveresolution)
+    {
+        sem_wait(&g_snake_semevent);
+    }
+
+    hwnd2.size.w = 100;
+    hwnd2.size.h = 50;
+
+    ret = nxeg_setsize(hwnd2.hwnd, &hwnd2.size);
+    if (ret < 0)
+    {
+        goto errout_with_hwnd2;
+    }
+    hwnd2.pt.x = hwnd1.size.w - hwnd2.size.w -50; //左上角
+    hwnd2.pt.y = 40; //左上角
+
+    ret = nxeg_setposition(hwnd2.hwnd, &hwnd2.pt);
+    if (ret < 0)
+    {
+        goto errout_with_hwnd2;
+    }
+
+    //延时等待窗口创建完成
+    sleep(1);
+
+    /* ************************************** */
+    
+    /* 创建贪吃蛇逻辑任务 */
+    ret = snake_logic(g_snake_hnx,&hwnd1,&hwnd2);  //检测返回，有问题直接到窗口销毁退出
+    if(ret < 0)
+    {
+      goto errout_with_hwnd2;
+    }
+
+    /* 创建触控检测线程 */
+    ret = touch();
+    if(ret <0)
+    {
+      goto out_close;
+    }
+
+    pthread_join(Snake_t1,NULL);//等待线程结束
+
     while(1)
     {
-        key = Snake_Get_Dir();          //获取触控输入
-        switch(key)
-        {
-            case KEY_UP:
-            printf("in %s :%d\n",__FILE__,__LINE__);
-                turn(UP);       //上
-                break;
-            case KEY_DOWN:
-            printf("in %s :%d\n",__FILE__,__LINE__);
-                turn(DOWN);     //下
-                break;
-            case KEY_LEFT:
-            printf("in %s :%d\n",__FILE__,__LINE__);
-                turn(LEFT);     //左
-                break;
-            case KEY_RIGHT:
-            printf("in %s :%d\n",__FILE__,__LINE__);
-                turn(RIGHT);    //右
-                break;
-            default:
-                break;
-        }
-        usleep(1000);
-        // pthread_testcancel();//主动设置取消点
+        sleep(1);
     }
-}
- 
+    
 
-static int snake_show_score_windows(struct nxhw_handle *hwnd_score)
-{
-    int ret;
-    const uint8_t g_kbdmsg[] = "Score: 0";
-    hwnd_score->size.w = 100;
-    hwnd_score->size.h = 50;
+    //Close the window2
+out_close:
+    printf("close pthread\n");
+    // pthread_cancel(Snake_t1);
+    pthread_cancel(Snake_t2);
+    // pthread_cancel(Touch_t1);
+    // sleep(5);
 
-    ret = hwnd_score->nxeg_setsize(hwnd_score->hwnd, &hwnd_score->size);
+errout_with_hwnd2:
+    printf("nx_main: Close window #2\n");
+    nxeg_closewindow(hwnd2.hwnd, &hwnd2.g_wstate);
+
+    // Close the window1
+errout_with_hwnd1:
+    struct nxgl_rect_s TempRect;
+    TempRect.pt1.x = 0;
+    TempRect.pt1.y = 0;
+    TempRect.pt2.x = 800;
+    TempRect.pt2.y = 480;
+    nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES];
+    nxgl_color[0] = 0x07e2;
+    ret = nx_fill(hwnd1.hwnd, &TempRect, nxgl_color);
     if (ret < 0)
     {
-        return -1;
+        printf("nx_main: nx_fill failed: %d\n", errno);
     }
-    hwnd_score->pt.x = 50; //左上角
-    hwnd_score->pt.y = 40; //左上角
+    printf("nx_main: Close window #1\n");
+    nxeg_closewindow(hwnd1.hwnd, &hwnd1.g_wstate);
 
-    ret = hwnd_score->nxeg_setposition(hwnd_score->hwnd, &hwnd_score->pt);
-    if (ret < 0)
-    {
-        return -1;
-    }
+errout_with_nx:
+    printf("nx_main: Disconnect from the server\n");
+    nx_disconnect(g_snake_hnx);
 
-    ret = nx_kbdin(g_snake_hnx, strlen((FAR const char *)g_kbdmsg), g_kbdmsg);
-    if (ret < 0)
-    {
-        printf("nx_main: nx_kbdin failed: %d\n", errno);
-        return -1;
-    }
-    return 0;
+errout:
+    exit(0);
+    return g_exitcode;
 }
 
-int snake(NXHANDLE *hnx,struct nxhw_handle *hwnd_main,struct nxhw_handle *hwnd_score)
-{
-    int ret;
-    struct nxhw_handle * nxhw_handle_set[2]; //指针数组
 
 
-    nxhw_handle_set[0] = hwnd_main; //数组0保存地址
-    nxhw_handle_set[1] = hwnd_score;
-    printf("nxhw_handle_set addr:%p\n",(void *)nxhw_handle_set);
-    printf("hwnd_main addr:%p\n",(void *)nxhw_handle_set[0]);
-    printf("hwnd_score addr:%p\n",(void *)nxhw_handle_set[1]);
+#endif /* CONFIG_SNAKE */
 
-    initSnake(hwnd_main->hwnd);                //初始化蛇列表
-    gamePic(hwnd_main->hwnd);                  //地图初始化 //todo:这个有问题？ 好像是的 需要使用这个函数中的边界
-    ret = snake_show_score_windows(hwnd_score);
-    if(ret<0)
-    {
-        return -1;
-    }
-
-    g_hwnd_main = hwnd_main;
-    g_hwnd_score = hwnd_score;
-    pthread_create(&Snake_t1,NULL,refreshjiemian,nxhw_handle_set);  //创建界面刷新线程
-    pthread_create(&Snake_t2,NULL,changeDir,NULL);       //创建键盘方向输入监测线程
-
-    return 0;
+#ifdef __cplusplus
 }
-
+#endif

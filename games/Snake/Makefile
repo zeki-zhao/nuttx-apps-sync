@@ -22,8 +22,8 @@ include $(APPDIR)/Make.defs
 
 # NuttX NX Graphics Example.
 
-CSRCS = nx_events.c nx_kbdin.c snake.c touch.c
-MAINSRC = nx_main.c
+CSRCS = nx_events.c nx_kbdin.c snake_logic.c touch.c
+MAINSRC = snake.c
 
 # NX built-in application info
 

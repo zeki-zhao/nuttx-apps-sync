@@ -190,7 +190,7 @@ int main(int argc, FAR char *argv[])
                     // printf("In %s: %d\n",__func__,__LINE__);
                     read(mytouch_fd,&testsample,sizeof(struct touch_sample_s));
                     printf("npoints:%d\t x:%d y:%d\n",testsample.npoints,testsample.point->x,testsample.point->y);
-            }
+            } 
     }
     return 0;
     // int ret;

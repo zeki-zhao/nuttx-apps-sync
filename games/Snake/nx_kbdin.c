@@ -147,7 +147,6 @@ nxeg_renderglyph(FAR struct nxeg_state_s *st,
 
   /* Make sure that there is room for another glyph */
 
-  printf("nxeg_renderglyph: ch=%02x\n", ch);
   if (st->nglyphs < NXTK_MAXKBDCHARS)
     {
       /* Allocate the glyph */
@@ -413,7 +412,6 @@ void nxeg_kbdin(NXWINDOW hwnd, uint8_t nch, FAR const uint8_t *ch,
                 FAR void *arg)
 {
   FAR struct nxeg_state_s *st = (FAR struct nxeg_state_s *)arg;
-  printf("nxeg_kbdin%d: hwnd=%p nch=%d\n", st->wnum, hwnd, nch);
   nxeg_addchars(hwnd, st, nch, ch);
 }
 

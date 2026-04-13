@@ -286,6 +286,7 @@ static void nxeg_tbmousein(NXEGWINDOW hwnd, FAR const struct nxgl_point_s *pos,
 FAR void *nx_snake_listenerthread(FAR void *arg)
 {
   int ret;
+  NXHANDLE* pNxhandle = arg;
 
   /* Process events forever */
 
@@ -299,7 +300,7 @@ FAR void *nx_snake_listenerthread(FAR void *arg)
        * logic with nx_eventnotify and sigwait to pace it).
        */
 
-      ret = nx_eventhandler(g_snake_hnx);
+      ret = nx_eventhandler(*pNxhandle);
       if (ret < 0)
         {
           /* An error occurred... assume that we have lost connection with

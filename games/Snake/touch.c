@@ -41,23 +41,16 @@ extern struct pollfd touch_fds;
 
 void* touch_detect(void *arg)
 {
-
     int ret;
-    int cnt = 0;
-    struct pollfd* fds = (struct pollfd*)arg;
     while(1)
     {
-        
-        // printf("hello\n");
-        // printf("hello\n");
-        // printf("touch_fds.fd: %d\n",touch_fds.fd);
         ret = poll(&touch_fds,1,20);
         if(ret > 0)
         {
-            // printf("In %s: %d\n",__func__,__LINE__);
             ret = read(mytouch_fd,&Snake_Touch,sizeof(struct touch_sample_s));
             if(ret > 0)
             {
+                printf("touch_detect: x=%d, y=%d\n", Snake_Touch.point->x, Snake_Touch.point->y);
                 if((Snake_Touch.point->x > CLOSE_BUTTON_X) && 
                 (Snake_Touch.point->x < CLOSE_BUTTON_X + CLOSE_BUTTON_SIZE) && 
                 (Snake_Touch.point->y > CLOSE_BUTTON_Y) && 
@@ -68,10 +61,7 @@ void* touch_detect(void *arg)
                     pthread_exit(NULL);
                 }
             }
-            // printf("npoints:%d\t x:%d y:%d\n",Snake_Touch.npoints,Snake_Touch.point->x,Snake_Touch.point->y);
         }
-        // usleep(10000);
-        // sleep(1);
     }
 }
 
@@ -104,7 +94,7 @@ int touch(void)
     // 销毁线程属性对象
     pthread_attr_destroy(&attr);
     if(ret < 0 )
-    {
+    { 
         return -1;
     }
     return 0;
