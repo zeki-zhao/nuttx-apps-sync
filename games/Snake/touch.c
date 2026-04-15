@@ -1,3 +1,4 @@
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -15,25 +16,22 @@
 
 #include <nuttx/input/touchscreen.h>
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <errno.h>
 #include <unistd.h>
 
 #include <nuttx/video/fb.h>
 
 #include <nuttx/config.h>
 
-extern pthread_t Touch_t1;    //创建线程变量t1
-extern pthread_t Snake_t1;    //创建线程变量t1
+#include "touch.h"
+
 struct touch_sample_s Snake_Touch;
-extern int mytouch_fd;
-extern struct pollfd touch_fds;
+sem_t stDirChangeSemevent;
 
 #define CLOSE_BUTTON_X 780
 #define CLOSE_BUTTON_Y 0
@@ -51,6 +49,7 @@ void* touch_detect(void *arg)
             if(ret > 0)
             {
                 printf("touch_detect: x=%d, y=%d\n", Snake_Touch.point->x, Snake_Touch.point->y);
+                sem_post(&stDirChangeSemevent); //触发方向改变信号量
                 if((Snake_Touch.point->x > CLOSE_BUTTON_X) && 
                 (Snake_Touch.point->x < CLOSE_BUTTON_X + CLOSE_BUTTON_SIZE) && 
                 (Snake_Touch.point->y > CLOSE_BUTTON_Y) && 
@@ -78,7 +77,7 @@ int touch(void)
     touch_fds.events = POLLIN;
 
     pthread_attr_t attr;
-    size_t stack_size = 4096; // 设置堆栈大小为 1MB
+    size_t stack_size = 4096; // 设置堆栈大小为 4KB?
 
     // 初始化线程属性对象
     if (pthread_attr_init(&attr) != 0) {

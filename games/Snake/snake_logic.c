@@ -32,6 +32,8 @@ extern "C"{
 #include "nx_internal.h"
 #include "touch.h"
 
+#include "touch.h"
+
 #include "snake_logic.h"
 
 /*add user code*/
@@ -78,9 +80,9 @@ extern "C"{
 
 
 #define  UP     1
-#define  DOWN   2
-#define  LEFT   3
-#define  RIGHT  4
+#define  DOWN   -1
+#define  LEFT   2
+#define  RIGHT  -2
 
 /***********************************************************************************************************************
 *                                                        ENUMS
@@ -121,10 +123,7 @@ static int Score = 0;           //分数
 static nxgl_mxpixel_t nxgl_color[CONFIG_NX_NPLANES];
 
 struct Snake food;              //食物
-static uint16_t u16Dir = RIGHT; //记录输入的方向键
-
-
-extern struct nxterm_state_s g_nxterm_vars;
+static int16_t s16Dir = RIGHT; //记录输入的方向键
 
 
 /***********************************************************************************************************************
@@ -139,7 +138,8 @@ static int snake_show_score_windows(struct nxhw_handle *hwnd_score)
 {
     int ret;
     uint8_t g_kbdmsg[20];
-    sprintf((char *)g_kbdmsg,"Score: %03d",Score);
+    printf("&g_kbdmsg=%p\n",g_kbdmsg);
+    snprintf((char*)g_kbdmsg,sizeof(g_kbdmsg),"Score: %03d",Score);;
     ret = nx_kbdin(g_snake_hnx, strlen((FAR const char *)g_kbdmsg), g_kbdmsg);
     if (ret < 0)
     {
@@ -150,42 +150,40 @@ static int snake_show_score_windows(struct nxhw_handle *hwnd_score)
 }
 
 /*方向函数*/
-static void turn(uint16_t u16Direction)
+static void turn(int16_t s16Direction)
 {
-    u16Dir = u16Direction;        //方向取绝对值比较，当左右运动时只有上下输入才生效
+    if(abs(s16Dir) != abs(s16Direction))
+    {
+        s16Dir = s16Direction;        //方向取绝对值比较，当左右运动时只有上下输入才生效
+    }
 }
 
 
-static int Snake_Get_Dir(void)
+static int16_t Snake_Get_Dir(void)
 {
     if((Snake_Touch.point->x > UP_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < UP_BUTTON_LOCATION_X + BUTTON_SIZE) && 
         (Snake_Touch.point->y > UP_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < UP_BUTTON_LOCATION_Y + BUTTON_SIZE))
-    {
-        usleep(10000);           //线程休眠函数，150ms
+    {        
         return KEY_UP; 
     }else if((Snake_Touch.point->x > DOWN_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < DOWN_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
         (Snake_Touch.point->y > DOWN_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < DOWN_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-        usleep(10000);           //线程休眠函数，150ms
         return KEY_DOWN; 
     }else if((Snake_Touch.point->x > LEFT_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < LEFT_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
         (Snake_Touch.point->y > LEFT_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < LEFT_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-        usleep(10000);           //线程休眠函数，150ms
         return KEY_LEFT; 
     }else if((Snake_Touch.point->x > RIGHT_BUTTON_LOCATION_X) && 
         (Snake_Touch.point->x < RIGHT_BUTTON_LOCATION_X + BUTTON_SIZE)&& 
         (Snake_Touch.point->y > RIGHT_BUTTON_LOCATION_Y) && 
         (Snake_Touch.point->y < RIGHT_BUTTON_LOCATION_Y + BUTTON_SIZE))
     {
-
-        usleep(10000);           //线程休眠函数，150ms
         return KEY_RIGHT; 
     }else{
         return -1;
@@ -197,8 +195,8 @@ static void* changeDir(void *arg)
 {
     while(1)
     {
-        uint16_t u16Key = Snake_Get_Dir();          //获取触控输入
-        switch(u16Key)
+        sem_wait(&stDirChangeSemevent);
+        switch(Snake_Get_Dir())
         {
             case KEY_UP:
                 printf("up\n");
@@ -219,7 +217,6 @@ static void* changeDir(void *arg)
             default:
                 break;
         }
-        usleep(1000);
     }
 }
 
@@ -241,15 +238,15 @@ static void Snake_draw_rectangle(NXEGWINDOW *hwnd,int16_t x1,int16_t y1,int16_t 
 }
 
 /*添加蛇身节点*/
-static void addNode(uint16_t u16Direction)
+static void addNode(int16_t s16Direction)
 {
     struct Snake *new;         //新节点变量
     new = (struct Snake *)malloc(sizeof(struct Snake));//为新节点开辟内存空间
 
-    switch(u16Direction)                //方向键判断
+    switch(s16Direction)                //方向键判断
     {
         case UP:
-            new->y = tail->y - PIXEL_SIZE;  //向上，行减1，上移 //TODO:为什么增加4个就正常？
+            new->y = tail->y - PIXEL_SIZE;  //向上，行减1，上移
             new->x = tail->x;        //列保持
             break;
         case DOWN:
@@ -477,11 +474,11 @@ void showScore(struct nxhw_handle *hwnd_score)
 /*蛇移动*/
 void moveSnake(NXEGWINDOW *hwnd, struct nxhw_handle *hwnd_score)
 {
-    addNode(u16Dir); /* 添加新节点,tail是蛇的头部 */
+    addNode(s16Dir); /* 添加新节点,tail是蛇的头部 */
     if(ifSnakedie()){   /* 死亡检测：死亡 */
         printf("die!!!!!\n");
         printf("Last Score:%d\n", Score);
-        u16Dir = RIGHT; /* 死亡后默认向右移动 */
+        s16Dir = RIGHT; /* 死亡后默认向右移动 */
         Score = 0;
         showScore(hwnd_score); /* 刷新分数 */
         initSnake(hwnd);    /* 如果满足越界或者自残条件，重新初始化蛇链表 */
@@ -510,8 +507,6 @@ void signal_handler(int signum)
         free(p);                //释放链表头内存
     }
 
-    // nxtk_raise(g_nxterm_vars.hwnd);
-
     pthread_exit(NULL);
 }
 
@@ -537,7 +532,8 @@ void* refreshjiemian(void *arg)
 int snake_logic(NXHANDLE *hnx,struct nxhw_handle *hwnd_main,struct nxhw_handle *hwnd_score)
 {
     int ret;
-    struct nxhw_handle * nxhw_handle_set[2]; //指针数组
+    printf("&head=%p\n",&head);
+    static struct nxhw_handle * nxhw_handle_set[2]; //指针数组
 
     nxhw_handle_set[0] = hwnd_main; //数组0保存地址
     nxhw_handle_set[1] = hwnd_score;
@@ -545,6 +541,13 @@ int snake_logic(NXHANDLE *hnx,struct nxhw_handle *hwnd_main,struct nxhw_handle *
     ret = snake_show_score_windows(hwnd_score);
     if(ret<0)
     {
+        return -1;
+    }
+
+    ret = sem_init(&stDirChangeSemevent, 0, 0); //初始化信号量
+    if (ret < 0)
+    {
+        printf("Failed to initialize semaphore: %d\n", errno);
         return -1;
     }
     initSnake(hwnd_main->hwnd);                //初始化蛇列表
