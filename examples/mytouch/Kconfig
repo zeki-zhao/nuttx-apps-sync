@@ -4,10 +4,10 @@
 #
 
 config EXAMPLES_MYTOUCH
-	tristate "\"TOUCH test!\" example"
+	tristate "myTouch example"
 	default n
 	---help---
-		Enable the \"TOUCH test\" example
+		Enable the myTouch example
 
 if EXAMPLES_MYTOUCH
 
