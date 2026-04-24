@@ -44,13 +44,17 @@ static void* sub_test(void *arg)
     }
 
     while(1){
-        u8Ret = ioctl(u16LedDeviceFd, 0, 1);
+        u8Ret = ioctl(u16LedDeviceFd, 0, 0); //切换0号灯状态
         if (u8Ret < 0) {
             printf("ERROR: Failed to set led on: %d\n", errno);
-            // return;
         }
         usleep(500000);
-        u8Ret = ioctl(u16LedDeviceFd, 0, 0);
+        u8Ret = ioctl(u16LedDeviceFd, 0, 1); //切换1号灯状态
+        if (u8Ret < 0) {
+            printf("ERROR: Failed to set led on: %d\n", errno);
+        }
+        usleep(500000);
+        u8Ret = ioctl(u16LedDeviceFd, 0, 2); //切换2号灯状态
         if (u8Ret < 0) {
             printf("ERROR: Failed to set led on: %d\n", errno);
             // return;
