@@ -153,7 +153,7 @@ int lv_nuttx_fbdev_set_file(lv_display_t * disp, const char * file)
         lv_display_set_draw_buffers(disp, &dsc->buf1, &dsc->buf2);
     }
     else {
-        dsc->mem_off_screen = malloc(data_size);
+        dsc->mem_off_screen = (uint8_t *)dsc->mem + data_size;
         LV_ASSERT_MALLOC(dsc->mem_off_screen);
         if(!dsc->mem_off_screen) {
             ret = -ENOMEM;
@@ -394,8 +394,6 @@ static void display_release_cb(lv_event_t * e)
         }
 
         if(dsc->mem_off_screen) {
-            /* Free the off-screen buffer */
-            free(dsc->mem_off_screen);
             dsc->mem_off_screen = NULL;
         }
 
