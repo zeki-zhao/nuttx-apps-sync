@@ -554,7 +554,7 @@ int snake_logic(NXHANDLE *hnx,struct nxhw_handle *hwnd_main,struct nxhw_handle *
     gamePic(hwnd_main->hwnd);                  //地图初始化
     
 
-    g_hwnd_main = hwnd_main;
+    g_hwnd_main = hwnd_main; //可优化
     g_hwnd_score = hwnd_score;
     pthread_create(&Snake_t1,NULL,refreshjiemian,nxhw_handle_set);  //创建界面刷新线程
     pthread_create(&Snake_t2,NULL,changeDir,NULL);       //创建键盘方向输入监测线程

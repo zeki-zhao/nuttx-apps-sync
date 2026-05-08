@@ -4,10 +4,10 @@
 #
 
 config EXAMPLES_MYLED
-	tristate "\"Hello, World!\" example"
+	tristate "myled example"
 	default n
 	---help---
-		Enable the \"Hello, World!\" example
+		Enable the myled example
 
 if EXAMPLES_MYLED
 

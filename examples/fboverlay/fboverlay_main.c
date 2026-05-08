@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/examples/fboverlay/fboverlay_main.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -630,7 +632,7 @@ static int overlay_accl(int fb, uint8_t overlayno, uint32_t accl)
  *
  ****************************************************************************/
 
-int overlay_color(int fb, FAR struct fb_overlayinfo_s *oinfo)
+static int overlay_color(int fb, FAR struct fb_overlayinfo_s *oinfo)
 {
   int ret;
 
@@ -793,7 +795,7 @@ static int overlay_blank(int fb, FAR struct fb_overlayinfo_s *oinfo)
  *
  ****************************************************************************/
 
-int overlay_area(int fb, FAR struct fb_overlayinfo_s *oinfo)
+static int overlay_area(int fb, FAR struct fb_overlayinfo_s *oinfo)
 {
   int ret;
 

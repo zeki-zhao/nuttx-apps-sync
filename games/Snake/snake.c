@@ -704,7 +704,7 @@ int main(int argc, FAR char *argv[])
       goto out_close;
     }
 
-    pthread_join(Snake_t1,NULL);//等待线程结束
+    // pthread_join(Snake_t1,NULL);//等待线程结束
 
     while(1)
     {

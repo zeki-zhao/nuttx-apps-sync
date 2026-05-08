@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/examples/nxterm/nxterm_listener.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -32,8 +34,6 @@
 
 #include "nxterm_internal.h"
 
-#include "syslog.h"
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -57,9 +57,8 @@ FAR void *nxterm_listener(FAR void *arg)
        * following would be a tight infinite loop (unless we added addition
        * logic with nx_eventnotify and sigwait to pace it).
        */
-       
+
       ret = nx_eventhandler(g_nxterm_vars.hnx);
-       
       if (ret < 0)
         {
           /* An error occurred... assume that we have lost connection with
@@ -75,7 +74,6 @@ FAR void *nxterm_listener(FAR void *arg)
       if (!g_nxterm_vars.connected)
         {
           g_nxterm_vars.connected = true;
-           
           sem_post(&g_nxterm_vars.eventsem);
           printf("nxterm_listener: Connected\n");
         }

@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/examples/nxterm/nxterm_internal.h
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -176,7 +178,7 @@
 #  define CONFIG_EXAMPLES_NXTERM_STACKSIZE 2048
 #endif
 #ifndef CONFIG_EXAMPLES_NXTERM_LISTENERPRIO
-#  define CONFIG_EXAMPLES_NXTERM_LISTENERPRIO 99
+#  define CONFIG_EXAMPLES_NXTERM_LISTENERPRIO 100
 #endif
 #ifndef CONFIG_EXAMPLES_NXTERM_CLIENTPRIO
 #  define CONFIG_EXAMPLES_NXTERM_CLIENTPRIO 100

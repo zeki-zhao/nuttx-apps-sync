@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/examples/elf/tests/hello/hello.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -37,7 +39,6 @@ int main(int argc, char **argv)
 
   puts("Getting ready to say \"Hello, world\"\n");
   printf("Hello, world!\n");
-   printf("Hello, zeki!\n");
   puts("It has been said.\n");
 
   /* Print arguments */

@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/examples/nxterm/nxterm_main.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -36,7 +38,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #ifdef CONFIG_NX_LCDDRIVER
 #  include <nuttx/lcd/lcd.h>
@@ -52,8 +54,6 @@
 #include "nshlib/nshlib.h"
 
 #include "nxterm_internal.h"
-
-// #include <../graphics/nxterm/nxterm.h>
 
 /****************************************************************************
  * Public Data
@@ -90,7 +90,6 @@ static int nxterm_initialize(void)
     }
 
   /* Start the NX server kernel thread */
-   
 
   ret = boardctl(BOARDIOC_NX_START, 0);
   if (ret < 0)
@@ -99,7 +98,7 @@ static int nxterm_initialize(void)
              errno);
       return ERROR;
     }
-   
+
   /* Connect to the server */
 
   g_nxterm_vars.hnx = nx_connect();
@@ -148,7 +147,7 @@ static int nxterm_initialize(void)
           /* Wait for the listener thread to wake us up when we really
            * are connected.
            */
-          sleep(1);
+
           sem_wait(&g_nxterm_vars.eventsem);
         }
     }
@@ -158,7 +157,6 @@ static int nxterm_initialize(void)
       return ERROR;
     }
 
-   
   return OK;
 }
 
@@ -171,17 +169,7 @@ static int nxterm_task(int argc, char **argv)
   /* If the console front end is selected, then run it on this thread */
 
 #ifdef CONFIG_NSH_CONSOLE
-  nsh_consolemain(argc, argv); //TODO:这里开启后就有两个控制台了，会均分输入字符
-
-  // FAR struct console_stdio_s *pstate = nsh_newconsole(true);
-  // int ret;
-
-  // DEBUGASSERT(pstate != NULL);
-
-  // /* Execute the session */
-
-  // ret = nsh_session(pstate, 2, argc, argv);
-
+  nsh_consolemain(argc, argv);
 #endif
 
   printf("nxterm_task: Unlinking the NX console device\n");
@@ -197,42 +185,6 @@ static int nxterm_task(int argc, char **argv)
 
   return EXIT_SUCCESS;
 }
-
-/****************************************************************************
- * Name: nxterm_input_listener
- ****************************************************************************/
-static int nxterm_input_listener(int argc, char **argv)
-{
-  int status = 0;
-  int nxterm_input_test_fd;
-  int ret;
-  char buf[10];
-  for(;;)
-  {
-    switch (status)
-    {
-    case 0:
-        /* code */
-        nxterm_input_test_fd = open(CONFIG_EXAMPLES_NXTERM_DEVNAME, O_RDWR); //需要在开启nxterm之后再打开这个listen
-        if (nxterm_input_test_fd < 0){
-            printf("ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_NXTERM_DEVNAME, errno);
-            status = 0;
-        }else{
-            printf("open nxterm0 success\n");
-            status = 1;
-        }
-        break;
-    case 1:
-        ret = read(nxterm_input_test_fd, buf, 1); //读取nxterm设备的输入
-        if(ret > 0){
-            write(nxterm_input_test_fd, buf,1); //写入nxterm设备显示
-        }
-    }
-  }
-
-  return 0;
-}
-
 
 /****************************************************************************
  * Public Functions
@@ -308,7 +260,6 @@ int main(int argc, FAR char *argv[])
 
   while (!g_nxterm_vars.haveres)
     {
-      sleep(1);
       sem_wait(&g_nxterm_vars.eventsem);
     }
 
@@ -355,13 +306,12 @@ int main(int argc, FAR char *argv[])
   ret = nxtk_opentoolbar(g_nxterm_vars.hwnd,
                          CONFIG_EXAMPLES_NXTERM_TOOLBAR_HEIGHT,
                          &g_nxtoolcb, NULL);
-  printf("[%s %s] %s: %s: %d\n", __DATE__, __TIME__, __FILE__, __func__, __LINE__);
   if (ret < 0)
     {
       printf("nxterm_main: nxtk_opentoolbar failed: %d\n", errno);
       goto errout_with_hwnd;
     }
-  printf("[%s %s] %s: %s: %d\n", __DATE__, __TIME__, __FILE__, __func__, __LINE__);
+
   /* Sleep a little bit to allow the server to catch up */
 
   sleep(2);
@@ -385,21 +335,20 @@ int main(int argc, FAR char *argv[])
   nxcreate.wndo.wsize.w       -= (2 * CONFIG_NXTK_BORDERWIDTH);
   nxcreate.wndo.wsize.h       -= (CONFIG_EXAMPLES_NXTERM_TOOLBAR_HEIGHT +
                                   2 * CONFIG_NXTK_BORDERWIDTH);
-  printf("[%s %s] %s: %s: %d\n", __DATE__, __TIME__, __FILE__, __func__, __LINE__);
+
   ret = boardctl(BOARDIOC_NXTERM, (uintptr_t)&nxcreate);
-  printf("[%s %s] %s: %s: %d\n", __DATE__, __TIME__, __FILE__, __func__, __LINE__);
   if (ret < 0)
     {
       printf("nxterm_main: boardctl(BOARDIOC_NXTERM) failed: %d\n", errno);
       goto errout_with_hwnd;
     }
-  printf("[%s %s] %s: %s: %d\n", __DATE__, __TIME__, __FILE__, __func__, __LINE__);
+
   g_nxterm_vars.hdrvr = nxcreate.nxterm;
   DEBUGASSERT(g_nxterm_vars.hdrvr != NULL);
 
   /* Open the NxTerm driver */
 
-  fd = open(CONFIG_EXAMPLES_NXTERM_DEVNAME, O_RDWR);
+  fd = open(CONFIG_EXAMPLES_NXTERM_DEVNAME, O_WRONLY);
   if (fd < 0)
     {
       printf("nxterm_main: open %s read-only failed: %d\n",
@@ -419,31 +368,21 @@ int main(int argc, FAR char *argv[])
   fflush(stdout);
   fflush(stderr);
 
-  // dup2(fd, 0); //todo:重定向输入流,但是这里会导致输入流被重定向到nxterm，导致输入字符无法输入到shell,TODO:输入->nxterm,但是nxterm没有处理输入字符的函数
-  dup2(fd, 1); //将标准输出重定向到nxterm文件中
+  dup2(fd, 1);
   dup2(fd, 2);
-  
-  
 
   /* And we can close our original driver file descriptor */
 
   close(fd);
 
-  system("kill 4\n"); //干掉终端shell
   /* And start the console task.  It will inherit stdin, stdout, and stderr
    * from this task.
    */
 
-  g_nxterm_vars.pid = task_create("NxTerm", 1,//CONFIG_EXAMPLES_NXTERM_PRIO,
+  g_nxterm_vars.pid = task_create("NxTerm", CONFIG_EXAMPLES_NXTERM_PRIO,
                                   CONFIG_EXAMPLES_NXTERM_STACKSIZE,
                                   nxterm_task, NULL);
-
   DEBUGASSERT(g_nxterm_vars.pid > 0);
-
-  g_nxterm_vars.pid = task_create("NxTerm_Input_Listener", 2,//CONFIG_EXAMPLES_NXTERM_PRIO,高优先级先处理回车输出
-                                  1024,
-                                  nxterm_input_listener, NULL);
-
   return EXIT_SUCCESS;
 
   /* Error Exits ************************************************************/
@@ -463,4 +402,3 @@ errout_with_nx:
 errout:
   return EXIT_FAILURE;
 }
-

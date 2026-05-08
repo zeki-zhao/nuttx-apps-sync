@@ -1,14 +1,11 @@
 /****************************************************************************
  * apps/netutils/ftpd/ftpd.c
  *
- *   Copyright (C) 2012, 2015, 2020 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Includes original code as well as logic adapted from hwport_ftpd, written
- * by Jaehyuk Cho <minzkn@minzkn.com> which is released under a BSD license.
- *
- *   Copyright (C) hwport.com. All rights reserved.
- *   Author: Jaehyuk Cho <mailto:minzkn@minzkn.com>
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2012, 2015, 2020 Gregory Nutt.
+ * SPDX-FileCopyrightText: hwport.com. All rights reserved.
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-FileContributor: Jaehyuk Cho <mailto:minzkn@minzkn.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,6 +48,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <strings.h>
@@ -60,7 +58,7 @@
 #include <libgen.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arpa/inet.h>
 
@@ -142,11 +140,11 @@ static uint8_t ftpd_listoption(FAR char **param);
 static int ftpd_listbuffer(FAR struct ftpd_session_s *session,
                            FAR char *path, FAR struct stat *st,
                            FAR char *buffer, size_t buflen,
-                           unsigned int opton);
+                           unsigned int option);
 static int fptd_listscan(FAR struct ftpd_session_s *session,
-                         FAR char *path, unsigned int opton);
+                         FAR char *path, unsigned int option);
 static int ftpd_list(FAR struct ftpd_session_s *session,
-                     unsigned int opton);
+                     unsigned int option);
 
 /* Command handlers */
 
@@ -915,7 +913,7 @@ static int ftpd_accept(int sd, FAR void *addr, FAR socklen_t *addrlen,
 
   /* Accept the connection -- waiting if necessary */
 
-  acceptsd = accept(sd, (FAR struct sockaddr *)addr, addrlen);
+  acceptsd = accept4(sd, (FAR struct sockaddr *)addr, addrlen, SOCK_CLOEXEC);
   if (acceptsd < 0)
     {
       int errval = errno;
@@ -2147,7 +2145,7 @@ static uint8_t ftpd_listoption(FAR char **param)
 static int ftpd_listbuffer(FAR struct ftpd_session_s *session,
                            FAR char *path,
                            FAR struct stat *st, FAR char *buffer,
-                           size_t buflen, unsigned int opton)
+                           size_t buflen, unsigned int option)
 {
   UNUSED(session);
 
@@ -2156,7 +2154,7 @@ static int ftpd_listbuffer(FAR struct ftpd_session_s *session,
 
   name = basename(path);
 
-  if ((opton & FTPD_LISTOPTION_L) != 0)
+  if ((option & FTPD_LISTOPTION_L) != 0)
     {
       FAR const char *str;
       struct tm tm;
@@ -2369,7 +2367,7 @@ static int ftpd_listbuffer(FAR struct ftpd_session_s *session,
  ****************************************************************************/
 
 static int fptd_listscan(FAR struct ftpd_session_s *session, FAR char *path,
-                         unsigned int opton)
+                         unsigned int option)
 {
   FAR char *temp;
   DIR *dir;
@@ -2386,7 +2384,7 @@ static int fptd_listscan(FAR struct ftpd_session_s *session, FAR char *path,
   if (!S_ISDIR(st.st_mode))
     {
       ret = ftpd_listbuffer(session, path, &st, session->data.buffer,
-                            session->data.buflen, opton);
+                            session->data.buflen, option);
       if (ret == 0)
         {
           ret = ftpd_response(session->data.sd, session->txtimeout,
@@ -2414,7 +2412,7 @@ static int fptd_listscan(FAR struct ftpd_session_s *session, FAR char *path,
 
       if (entry->d_name[0] == '.')
         {
-          if ((opton & FTPD_LISTOPTION_A) == 0)
+          if ((option & FTPD_LISTOPTION_A) == 0)
             {
               continue;
             }
@@ -2434,7 +2432,7 @@ static int fptd_listscan(FAR struct ftpd_session_s *session, FAR char *path,
         }
 
       ret = ftpd_listbuffer(session, temp, &st, session->data.buffer,
-                            session->data.buflen, opton);
+                            session->data.buflen, option);
       if (ret >= 0)
         {
           ret = ftpd_response(session->data.sd, session->txtimeout,
@@ -2456,7 +2454,7 @@ static int fptd_listscan(FAR struct ftpd_session_s *session, FAR char *path,
  * Name: ftpd_list
  ****************************************************************************/
 
-static int ftpd_list(FAR struct ftpd_session_s *session, unsigned int opton)
+static int ftpd_list(FAR struct ftpd_session_s *session, unsigned int option)
 {
   FAR char *abspath;
   int ret;
@@ -2464,7 +2462,7 @@ static int ftpd_list(FAR struct ftpd_session_s *session, unsigned int opton)
   ret = ftpd_getpath(session, session->param, &abspath, NULL);
   if (ret >= 0)
     {
-      ret = fptd_listscan(session, abspath, opton);
+      ret = fptd_listscan(session, abspath, option);
       free(abspath);
     }
 
@@ -3419,7 +3417,7 @@ static int ftpd_command_epsv(FAR struct ftpd_session_s *session)
 
 static int ftpd_command_list(FAR struct ftpd_session_s *session)
 {
-  uint8_t opton = FTPD_LISTOPTION_L;
+  uint8_t option = FTPD_LISTOPTION_L;
   int ret;
 
   ret = ftpd_dataopen(session);
@@ -3437,8 +3435,8 @@ static int ftpd_command_list(FAR struct ftpd_session_s *session)
       return ret;
     }
 
-  opton |= ftpd_listoption((char **)(&session->param));
-  ftpd_list(session, opton);
+  option |= ftpd_listoption((char **)(&session->param));
+  ftpd_list(session, option);
 
   ret = ftpd_response(session->cmd.sd, session->txtimeout,
                       g_respfmt1, 226, ' ', "Transfer complete");
@@ -3453,7 +3451,7 @@ static int ftpd_command_list(FAR struct ftpd_session_s *session)
 
 static int ftpd_command_nlst(FAR struct ftpd_session_s *session)
 {
-  uint8_t opton = 0;
+  uint8_t option = 0;
   int ret;
 
   ret = ftpd_dataopen(session);
@@ -3471,8 +3469,8 @@ static int ftpd_command_nlst(FAR struct ftpd_session_s *session)
       return ret;
     }
 
-  opton |= ftpd_listoption((char **)(&session->param));
-  ftpd_list(session, opton);
+  option |= ftpd_listoption((char **)(&session->param));
+  ftpd_list(session, option);
 
   ret = ftpd_response(session->cmd.sd, session->txtimeout,
                       g_respfmt1, 226, ' ', "Transfer complete");

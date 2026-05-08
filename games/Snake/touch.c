@@ -30,6 +30,14 @@
 
 #include "touch.h"
 
+#define MAX_TOUCH_POINTS 6
+struct
+{
+  int npoints;
+  struct touch_point_s point[MAX_TOUCH_POINTS];
+} sample_storage;
+
+static struct touch_sample_s *testsample = (struct touch_sample_s *)&sample_storage;
 struct touch_sample_s Snake_Touch;
 sem_t stDirChangeSemevent;
 
@@ -45,10 +53,13 @@ void* touch_detect(void *arg)
         ret = poll(&touch_fds,1,20);
         if(ret > 0)
         {
-            ret = read(mytouch_fd,&Snake_Touch,sizeof(struct touch_sample_s));
+            ret = read(mytouch_fd, testsample, sizeof(sample_storage));
             if(ret > 0)
             {
-                printf("touch_detect: x=%d, y=%d\n", Snake_Touch.point->x, Snake_Touch.point->y);
+                Snake_Touch = *testsample;
+                for (int i = 0; i < testsample->npoints && i < MAX_TOUCH_POINTS; i++){
+                    printf("  point[%d]: x=%d y=%d\n", i,testsample->point[i].x, testsample->point[i].y);
+                }
                 sem_post(&stDirChangeSemevent); //触发方向改变信号量
                 if((Snake_Touch.point->x > CLOSE_BUTTON_X) && 
                 (Snake_Touch.point->x < CLOSE_BUTTON_X + CLOSE_BUTTON_SIZE) && 

@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/examples/nxhello/nxhello_main.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -36,7 +38,7 @@
 #include <sched.h>
 #include <pthread.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
@@ -89,69 +91,74 @@ static inline int nxhello_initialize(void)
     }
 
   /* Start the NX server kernel thread */
+
   ret = boardctl(BOARDIOC_NX_START, 0);
   if (ret < 0)
     {
-      printf("nxhello_initialize: Failed to start the NX server: %d\n", errno);
+      printf("nxhello_initialize: Failed to start the NX server: %d\n",
+             errno);
       return ERROR;
     }
 
   /* Connect to the server */
+
   g_nxhello.hnx = nx_connect();
   if (g_nxhello.hnx)
     {
-       pthread_attr_t attr;
-        
+      pthread_attr_t attr;
 
 #ifdef CONFIG_VNCSERVER
       /* Setup the VNC server to support keyboard/mouse inputs */
 
-       struct boardioc_vncstart_s vnc =
-       {
-         0, g_nxhello.hnx
-       };
+      struct boardioc_vncstart_s vnc =
+      {
+        0, g_nxhello.hnx
+      };
 
-       ret = boardctl(BOARDIOC_VNC_START, (uintptr_t)&vnc);
-       if (ret < 0)
-         {
-           printf("boardctl(BOARDIOC_VNC_START) failed: %d\n", ret);
-           nx_disconnect(g_nxhello.hnx);
-           return ERROR;
-         }
+      ret = boardctl(BOARDIOC_VNC_START, (uintptr_t)&vnc);
+      if (ret < 0)
+        {
+          printf("boardctl(BOARDIOC_VNC_START) failed: %d\n", ret);
+          nx_disconnect(g_nxhello.hnx);
+          return ERROR;
+        }
 #endif
 
-       /* Start a separate thread to listen for server events.  This is probably
-        * the least efficient way to do this, but it makes this example flow more
-        * smoothly.
-        */
+      /* Start a separate thread to listen for server events.  This is
+       * probably the least efficient way to do this, but it makes this
+       * example flow more smoothly.
+       */
 
-       pthread_attr_init(&attr);
-       param.sched_priority = CONFIG_EXAMPLES_NXHELLO_LISTENERPRIO;
-       pthread_attr_setschedparam(&attr, &param);
-       pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_NXHELLO_LISTENER_STACKSIZE);
+      pthread_attr_init(&attr);
+      param.sched_priority = CONFIG_EXAMPLES_NXHELLO_LISTENERPRIO;
+      pthread_attr_setschedparam(&attr, &param);
+      pthread_attr_setstacksize(&attr,
+                                CONFIG_EXAMPLES_NXHELLO_LISTENER_STACKSIZE);
 
-       ret = pthread_create(&thread, &attr, nxhello_listener, NULL);
-       if (ret != 0)
-         {
-            printf("nxhello_initialize: pthread_create failed: %d\n", ret);
-            return ERROR;
-         }
+      ret = pthread_create(&thread, &attr, nxhello_listener, NULL);
+      if (ret != 0)
+        {
+          printf("nxhello_initialize: pthread_create failed: %d\n", ret);
+          return ERROR;
+        }
 
-       /* Don't return until we are connected to the server */
-       while (!g_nxhello.connected)
-         {
-           /* Wait for the listener thread to wake us up when we really
-            * are connected.
-            */
-           sleep(1); //给了时间就连上了？是的单核CPU需要挂起线程让其他线程响应
-           sem_wait(&g_nxhello.eventsem);
-         }
+      /* Don't return until we are connected to the server */
+
+      while (!g_nxhello.connected)
+        {
+          /* Wait for the listener thread to wake us up when we really
+           * are connected.
+           */
+
+          sem_wait(&g_nxhello.eventsem);
+        }
     }
   else
     {
       printf("nxhello_initialize: nx_connect failed: %d\n", errno);
       return ERROR;
     }
+
   return OK;
 }
 
@@ -204,6 +211,7 @@ int main(int argc, FAR char *argv[])
     }
 
   /* Get the background window */
+
   ret = nx_requestbkgd(g_nxhello.hnx, &g_nxhellocb, NULL);
   if (ret < 0)
     {
@@ -211,24 +219,29 @@ int main(int argc, FAR char *argv[])
       g_nxhello.code = NXEXIT_NXREQUESTBKGD;
       goto errout_with_nx;
     }
+
   /* Wait until we have the screen resolution. */
+
   while (!g_nxhello.havepos)
     {
-      sleep(1);
       sem_wait(&g_nxhello.eventsem);
     }
 
-  printf("nxhello_main: Screen resolution (%d,%d)\n", g_nxhello.xres, g_nxhello.yres);
+  printf("nxhello_main: Screen resolution (%d,%d)\n",
+         g_nxhello.xres, g_nxhello.yres);
 
   /* Now, say hello and exit, sleeping a little before each. */
+
   sleep(1);
   nxhello_hello(g_nxhello.hbkgd);
   sleep(5);
 
   /* Release background */
+
   nx_releasebkgd(g_nxhello.hbkgd);
 
   /* Close NX */
+
 errout_with_nx:
   printf("nxhello_main: Disconnect from the server\n");
   nx_disconnect(g_nxhello.hnx);

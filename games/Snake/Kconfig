@@ -13,6 +13,30 @@ config GAMES_SNAKES
 
 if GAMES_SNAKES
 
+config GAMES_SNAKES_STACKSIZE
+	int "Snake Stack Size"
+	default DEFAULT_TASK_STACKSIZE
+	---help---
+		The stacksize to use when creating the NX server.  Default 2048
+
+config GAMES_SNAKES_CLIENTPRIO
+	int "Snake Client Priority"
+	default 100
+	---help---
+		The client priority.  Default: 100
+
+config GAMES_SNAKES_SERVERPRIO
+	int "Snake Server Priority"
+	default 120
+	---help---
+		The server priority.  Default: 120
+
+config GAMES_SNAKES_LISTENERPRIO
+	int "Snake Listener Priority"
+	default 80
+	---help---
+		The priority of the event listener thread. Default 80.
+
 config GAMES_SNAKES_DEFAULT_COLORS
 	bool "Use Default Colors"
 	default y
@@ -77,30 +101,5 @@ config GAMES_SNAKES_TOOLBAR_HEIGHT
 	---help---
 		The height of the toolbar in the NXTK framed windows
 
-comment "NX Server Options"
-
-config GAMES_SNAKES_STACKSIZE
-	int "NX Server Stack Size"
-	default DEFAULT_TASK_STACKSIZE
-	---help---
-		The stacksize to use when creating the NX server.  Default 2048
-
-config GAMES_SNAKES_CLIENTPRIO
-	int "Client Priority"
-	default 100
-	---help---
-		The client priority.  Default: 100
-
-config GAMES_SNAKES_SERVERPRIO
-	int "Server Priority"
-	default 120
-	---help---
-		The server priority.  Default: 120
-
-config GAMES_SNAKES_LISTENERPRIO
-	int "Listener Priority"
-	default 80
-	---help---
-		The priority of the event listener thread. Default 80.
 
 endif

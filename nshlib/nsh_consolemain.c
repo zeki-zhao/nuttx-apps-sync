@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/nshlib/nsh_consolemain.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -28,8 +30,6 @@
 
 #include "nsh.h"
 #include "nsh_console.h"
-
-#include "syslog.h"
 
 #if !defined(CONFIG_NSH_ALTCONDEV) && !defined(HAVE_USB_CONSOLE) && \
     !defined(HAVE_USB_KEYBOARD)
@@ -67,9 +67,13 @@ int nsh_consolemain(int argc, FAR char *argv[])
   int ret;
 
   DEBUGASSERT(pstate != NULL);
+  if (pstate == NULL)
+    {
+      return -ENOMEM;
+    }
 
   /* Execute the session */
-  syslog(LOG_DEBUG, "outfd=%d\n", pstate->cn_outfd);
+
   ret = nsh_session(pstate, NSH_LOGIN_LOCAL, argc, argv);
 
   /* Exit upon return */

@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/netutils/ntpclient/ntpclient.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -27,6 +29,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 
@@ -37,7 +40,7 @@
 #include <sched.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <unistd.h>
 
 #include <netinet/in.h>
@@ -49,6 +52,7 @@
 
 #include <nuttx/clock.h>
 
+#include "netutils/netlib.h"
 #include "netutils/ntpclient.h"
 
 #include "ntpv3.h"
@@ -100,9 +104,7 @@
 
 #define MAX_SERVER_SELECTION_RETRIES 3
 
-#ifndef ARRAY_SIZE
-#  define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-#endif
+#define MAX_RETRY_INTERVAL 120
 
 #ifndef STR
 #  define STR2(x) #x
@@ -412,7 +414,7 @@ static inline void ntpc_setuint64(FAR uint8_t *ptr, uint64_t value)
  * Name: ntp_secpart
  ****************************************************************************/
 
-static uint32_t ntp_secpart(uint64_t time)
+static int32_t ntp_secpart(int64_t time)
 {
   /* NTP timestamps are represented as a 64-bit fixed-point number, in
    * seconds relative to 0000 UT on 1 January 1900.  The integer part is
@@ -437,11 +439,11 @@ static uint32_t ntp_secpart(uint64_t time)
  * Name: ntp_nsecpart
  ****************************************************************************/
 
-static uint32_t ntp_nsecpart(uint64_t time)
+static int32_t ntp_nsecpart(int64_t time)
 {
   /* Get fraction part converted to nanoseconds. */
 
-  return ((time & 0xffffffffu) * NSEC_PER_SEC) >> 32;
+  return (((int64_t)((uint64_t)time << 32) >> 32) * NSEC_PER_SEC) >> 32;
 }
 
 /****************************************************************************
@@ -531,6 +533,30 @@ static void ntpc_calculate_offset(FAR int64_t *offset, FAR int64_t *delay,
 }
 
 /****************************************************************************
+ * Name: ntpc_apply_offset
+ ****************************************************************************/
+
+static void ntpc_apply_offset(FAR struct timespec *tp,
+                              FAR struct timespec *src,
+                              int64_t offset)
+{
+  tp->tv_sec  = src->tv_sec  + ntp_secpart(offset);
+  tp->tv_nsec = src->tv_nsec + ntp_nsecpart(offset);
+
+  while (tp->tv_nsec < 0)
+    {
+      tp->tv_nsec += NSEC_PER_SEC;
+      tp->tv_sec--;
+    }
+
+  while (tp->tv_nsec >= NSEC_PER_SEC)
+    {
+      tp->tv_nsec -= NSEC_PER_SEC;
+      tp->tv_sec++;
+    }
+}
+
+/****************************************************************************
  * Name: ntpc_settime
  *
  * Description:
@@ -583,14 +609,7 @@ static void ntpc_settime(int64_t offset, FAR struct timespec *start_realtime,
 
   /* Apply offset */
 
-  tp = curr_realtime;
-  tp.tv_sec  += ntp_secpart(offset);
-  tp.tv_nsec += ntp_nsecpart(offset);
-  while (tp.tv_nsec >= NSEC_PER_SEC)
-    {
-      tp.tv_nsec -= NSEC_PER_SEC;
-      tp.tv_sec++;
-    }
+  ntpc_apply_offset(&tp, &curr_realtime, offset);
 
   /* Set the system time */
 
@@ -875,8 +894,8 @@ static int ntpc_create_dgram_socket(int domain)
 
   /* Setup a send timeout on the socket */
 
-  tv.tv_sec  = 5;
-  tv.tv_usec = 0;
+  tv.tv_sec  = CONFIG_NETUTILS_NTPCLIENT_TIMEOUT_MS / 1000;
+  tv.tv_usec = (CONFIG_NETUTILS_NTPCLIENT_TIMEOUT_MS % 1000) * 1000;
 
   ret = setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(struct timeval));
   if (ret < 0)
@@ -887,9 +906,6 @@ static int ntpc_create_dgram_socket(int domain)
     }
 
   /* Setup a receive timeout on the socket */
-
-  tv.tv_sec  = 5;
-  tv.tv_usec = 0;
 
   ret = setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
   if (ret < 0)
@@ -1006,7 +1022,7 @@ static int ntp_get_next_hostip(FAR struct ntp_servers_s *srvs,
       /* Refresh DNS for new IP-addresses. */
 
       ret = ntp_gethostip_multi(hostname, srvs->list,
-                                ARRAY_SIZE(srvs->list));
+                                nitems(srvs->list));
       if (ret <= 0)
         {
           return ERROR;
@@ -1220,6 +1236,7 @@ static int ntpc_daemon(int argc, FAR char **argv)
   FAR struct ntp_servers_s *srvs;
   int exitcode = EXIT_SUCCESS;
   int retries = 0;
+  int retry_delay = 1;
   int nsamples;
   int ret;
 
@@ -1289,21 +1306,24 @@ static int ntpc_daemon(int argc, FAR char **argv)
       clock_gettime(CLOCK_REALTIME, &start_realtime);
       clock_gettime(CLOCK_MONOTONIC, &start_monotonic);
 
-      /* Collect samples. */
-
       nsamples = 0;
-      for (i = 0; i < CONFIG_NETUTILS_NTPCLIENT_NUM_SAMPLES; i++)
+      if (netlib_check_ipconnectivity(NULL, 1, 1) > 0)
         {
-          /* Get next sample. */
+          /* Collect samples. */
 
-          ret = ntpc_get_ntp_sample(srvs, samples, nsamples);
-          if (ret < 0)
+          for (i = 0; i < CONFIG_NETUTILS_NTPCLIENT_NUM_SAMPLES; i++)
             {
-              errval = errno;
-            }
-          else
-            {
-              ++nsamples;
+              /* Get next sample. */
+
+              ret = ntpc_get_ntp_sample(srvs, samples, nsamples);
+              if (ret < 0)
+                {
+                  errval = errno;
+                }
+              else
+                {
+                  ++nsamples;
+                }
             }
         }
 
@@ -1392,6 +1412,7 @@ static int ntpc_daemon(int argc, FAR char **argv)
 
               sleep(CONFIG_NETUTILS_NTPCLIENT_POLLDELAYSEC);
               retries = 0;
+              retry_delay = 1;
             }
 
           continue;
@@ -1411,7 +1432,14 @@ static int ntpc_daemon(int argc, FAR char **argv)
 
       if (errval != EINTR)
         {
-          sleep(1);
+          ninfo("Retry %d in %d seconds...\n", retries, retry_delay);
+          sleep(retry_delay);
+
+          retry_delay *= 2;
+          if (retry_delay > MAX_RETRY_INTERVAL)
+            {
+              retry_delay = MAX_RETRY_INTERVAL;
+            }
         }
 
       /* Keep retrying. */

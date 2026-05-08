@@ -1,6 +1,8 @@
 /****************************************************************************
  * apps/system/i2c/i2c_dev.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -39,7 +41,7 @@
  * Name: i2ccmd_dev
  ****************************************************************************/
 
-int i2ccmd_dev(FAR struct i2ctool_s *i2ctool, int argc, char **argv)
+int i2ccmd_dev(FAR struct i2ctool_s *i2ctool, int argc, FAR char **argv)
 {
   struct i2c_msg_s msg;
   FAR char *ptr;
@@ -63,6 +65,14 @@ int i2ccmd_dev(FAR struct i2ctool_s *i2ctool, int argc, char **argv)
 
   saveaddr         = i2ctool->regaddr;
   i2ctool->regaddr = 0;
+
+  /* For backwards compatibility, the default behaviour while scanning will
+   * be to send a read request on the I2C bus. It is also possible to specify
+   * the use of a zero-byte write request instead, but this option will not
+   * be sticky.
+   */
+
+  i2ctool->zerowrite = false;
 
   /* Parse any command line arguments */
 
@@ -126,55 +136,73 @@ int i2ccmd_dev(FAR struct i2ctool_s *i2ctool, int argc, char **argv)
       goto errout;
     }
 
+  /* Display message warning user about some devices which don't appear
+   * unless using zero-byte write header.
+   */
+
+  if (!i2ctool->zerowrite)
+    {
+      i2ctool_printf(
+          i2ctool,
+          "NOTE: Some devices may not appear with this "
+          "scan.\nYou may also try a scan with the -z flag to "
+          "discover more devices using a zero-byte write request.\n");
+    }
+
   /* Probe each address */
-  
 
-  // i2ctool_printf(i2ctool,
-  //                "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
-  // for (i = 0; i < 128; i += 16)
-  //   {
-      // i2ctool_printf(i2ctool, "%02x: ", i);
-      // i2ctool_printf(i2ctool,"hello0 ");
-      // for (j = 0; j < 16; j++)
-      //   {
-      //     /* Skip addresses that are out of the selected range */
+  i2ctool_printf(i2ctool,
+                 "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+  for (i = 0; i < 128; i += 16)
+    {
+      i2ctool_printf(i2ctool, "%02x: ", i);
+      for (j = 0; j < 16; j++)
+        {
+          /* Skip addresses that are out of the selected range */
 
-      //     addr = i + j;
-      //     if (addr < first || addr > last)
-      //       {
-      //         //i2ctool_printf(i2ctool, "   ");
-      //         i2ctool_printf(i2ctool,"0");
-      //         continue;
-      //       }
+          addr = i + j;
+          if (addr < first || addr > last)
+            {
+              i2ctool_printf(i2ctool, "   ");
+              continue;
+            }
 
           /* Set up data structures */
 
-          regaddr       = i2ctool->regaddr;
-
           msg.frequency = i2ctool->freq;
-          msg.addr      = first;
-          msg.flags     = I2C_M_READ;
-          msg.buffer    = &regaddr;
-          msg.length    = 1;
-          ret = i2cdev_transfer(fd, &msg, 1);
+          msg.addr = addr;
 
-          // printf("test0\n");
-
-          if (ret == OK)
+          if (i2ctool->zerowrite)
             {
-              printf("%02x", first);
+              msg.flags = 0;
+              msg.buffer = NULL;
+              msg.length = 0;
             }
           else
             {
-              printf("-- ");
+              regaddr = i2ctool->regaddr;
+              msg.flags = I2C_M_READ;
+              msg.buffer = &regaddr;
+              msg.length = 1;
             }
 
-          // i2ctool_flush(i2ctool);
-        // }
+          ret = i2cdev_transfer(fd, &msg, 1);
 
-      // i2ctool_printf(i2ctool, "\n");
-      // i2ctool_flush(i2ctool);
-    // }
+          if (ret == OK)
+            {
+              i2ctool_printf(i2ctool, "%02x ", addr);
+            }
+          else
+            {
+              i2ctool_printf(i2ctool, "-- ");
+            }
+
+          i2ctool_flush(i2ctool);
+        }
+
+      i2ctool_printf(i2ctool, "\n");
+      i2ctool_flush(i2ctool);
+    }
 
   close(fd);
 
