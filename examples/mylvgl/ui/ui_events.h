@@ -10,11 +10,10 @@
 extern "C" {
 #endif
 
-void Bar1ValueChangeEvent(lv_event_t * e);
-void Bar1ValuePressedEvent(lv_event_t * e);
-void Led1ClickedEvent(lv_event_t * e);
-void Led2ClickedEvent(lv_event_t * e);
-void Led3ClickedEvent(lv_event_t * e);
+void Led1Change(lv_event_t * e);
+void Led2Change(lv_event_t * e);
+void Led3Change(lv_event_t * e);
+void SaveToSd(lv_event_t * e);
 
 #ifdef __cplusplus
 } /*extern "C"*/

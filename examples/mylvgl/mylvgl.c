@@ -1,9 +1,15 @@
 #include <nuttx/config.h>
+#include <nuttx/pthread.h>
 #include <unistd.h>
 #include <sys/boardctl.h>
 #include <signal.h>
+#include <pthread.h>
+#include <mqueue.h>
 
 #include "ui/ui.h"
+#include "lvgl_event.h"
+#include "led_handler.h"
+#include "sd_handler.h"
 
 #undef NEED_BOARDINIT
 
@@ -47,6 +53,19 @@ int main(int argc, FAR char *argv[])
 
     signal(SIGINT, sigint_handler);
 
+    /* initialize event message queue */
+    mqd_t mqd = lvgl_event_init();
+    if (mqd == (mqd_t)-1)
+    {
+        goto error;
+    }
+
+    lvgl_evt_register(LVGL_MSG_TOGGLE_LED, toggle_led_handler);
+    lvgl_evt_register(LVGL_MSG_SAVE_TEXT, save_text_handler);
+
+    pthread_t LvglEvent;
+    pthread_create(&LvglEvent, NULL, LvglEventProcess, (void *)(intptr_t)mqd);
+
     while (g_running){
         uint32_t idle;
         idle = lv_timer_handler();
@@ -54,8 +73,12 @@ int main(int argc, FAR char *argv[])
         usleep(idle * 1000);
     }
 
+    pthread_cancel(LvglEvent);
+    pthread_join(LvglEvent, NULL);
+    lvgl_event_fini();
+
+error:
     lv_nuttx_deinit(&result);
     lv_deinit();
-
     return 0;
 }

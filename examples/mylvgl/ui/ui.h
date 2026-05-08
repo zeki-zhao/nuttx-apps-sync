@@ -16,9 +16,9 @@ extern "C" {
 #include "ui_events.h"
 
 ///////////////////// SCREENS ////////////////////
-#include "screens/ui_LedCtrlTest.h"
-#include "screens/ui_ModebusTest.h"
-#include "screens/ui_SdCardAndFatFsTest.h"
+#include "screens/ui_Screen1.h"
+#include "screens/ui_Screen2.h"
+#include "screens/ui_Screen3.h"
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -28,7 +28,6 @@ extern lv_obj_t * ui____initial_actions0;
 // UI INIT
 void ui_init(void);
 void ui_destroy(void);
-void ui_relocalize(void);
 
 #ifdef __cplusplus
 } /*extern "C"*/

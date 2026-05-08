@@ -4,86 +4,32 @@
 // Project name: SquareLine_Project
 
 #include "ui.h"
-#include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#include "../lvgl_event.h"
 
-#define CONFIG_EXAMPLES_LED_DEVNAME "/dev/myled"
-
-static int bar_value = 25;
-
-
-void Bar1ValueChangeEvent(lv_event_t * e)
+void Led1Change(lv_event_t * e)
 {
-	// Your code here
+	lvgl_event_send_toggle_led(1);
 }
 
-void Bar1ValuePressedEvent(lv_event_t * e)
+void Led2Change(lv_event_t * e)
 {
-	// Your code here
-    bar_value += 10;
-    if (bar_value > 100)
+	lvgl_event_send_toggle_led(2);
+}
+
+void Led3Change(lv_event_t * e)
+{
+    lvgl_event_send_toggle_led(3);
+}
+
+void SaveToSd(lv_event_t * e)
+{
+    const char *text = lv_textarea_get_text(ui_TextArea3);
+    if (text && text[0])
     {
-        bar_value = 0;
+        int ret = lvgl_event_send_text(text);
+        if (ret < 0)
+            printf("ERROR: Failed to send text: %d\n", errno);
     }
-    lv_bar_set_value(ui_Bar1, bar_value, LV_ANIM_ON);
 }
-
-void Led1ClickedEvent(lv_event_t * e)
-{
-	// Your code here
-    int fd = open(CONFIG_EXAMPLES_LED_DEVNAME, O_RDWR);
-    if (fd < 0)
-    {
-        printf("ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_LED_DEVNAME, errno);
-        goto error;
-    }
-    int ret = ioctl(fd, 0, 1); /* toggle LED #0 */
-    if (ret < 0) {
-        printf("ERROR: Failed to toggle led: %d\n", errno);
-        goto error;
-    }
-error:
-    close(fd);
-}
-
-void Led2ClickedEvent(lv_event_t * e)
-{
-	// Your code here
-    int fd = open(CONFIG_EXAMPLES_LED_DEVNAME, O_RDWR);
-    if (fd < 0)
-    {
-        printf("ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_LED_DEVNAME, errno);
-        goto error;
-    }
-    int ret = ioctl(fd, 0, 2); /* toggle LED #0 */
-    if (ret < 0) {
-        printf("ERROR: Failed to toggle led: %d\n", errno);
-        goto error;
-    }
-error:
-    close(fd);
-}
-
-void Led3ClickedEvent(lv_event_t * e)
-{
-	// Your code here
-    int fd = open(CONFIG_EXAMPLES_LED_DEVNAME, O_RDWR);
-    if (fd < 0)
-    {
-        printf("ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_LED_DEVNAME, errno);
-        goto error;
-    }
-    int ret = ioctl(fd, 0, 3); /* toggle LED #0 */
-    if (ret < 0) {
-        printf("ERROR: Failed to toggle led: %d\n", errno);
-        goto error;
-    }
-error:
-    close(fd);
-}
-
-

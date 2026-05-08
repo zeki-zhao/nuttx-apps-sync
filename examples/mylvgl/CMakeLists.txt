@@ -36,6 +36,9 @@ if(CONFIG_EXAMPLES_MY_LVGL)
     ui
     SRCS
     mylvgl.c
+    lvgl_event.c
+    led_handler.c
+    sd_handler.c
     INCLUDE_DIRECTORIES
     .
     ui)
