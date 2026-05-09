@@ -183,13 +183,22 @@ jobs:
           run: |
             export ARTIFACTDIR=`pwd`/buildartifacts
 
-            pip install ntfc==0.0.1
+            for i in 1 2 3; do
+              python -m pip install \
+                --default-timeout=100 \
+                --retries 10 \
+                ntfc==0.0.1 && break
+              echo "Retry $i failed..."
+              sleep 5
+            done
+
             mkdir /github/workspace/nuttx-ntfc
             mkdir /github/workspace/nuttx-ntfc/external
             cd /github/workspace/nuttx-ntfc
             # get NTFC test cases
             cd external
-            git clone -b release-0.0.1 https://github.com/szafonimateusz-mi/nuttx-testing
+            git clone -b release-0.0.1 https://github.com/apache/nuttx-ntfc-testing
+            mv nuttx-ntfc-testing nuttx-testing
             export NTFCDIR=/github/workspace/nuttx-ntfc
 
             echo "::add-matcher::sources/nuttx/.github/gcc.json"
