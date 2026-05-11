@@ -180,22 +180,22 @@ static void nxeg_draw_exit_button(NXEGWINDOW hwnd)
 }
 
 #ifdef CONFIG_NX_XYINPUT
-static void nxeg_drivemouse(void)
-{
-    nxgl_coord_t x;
-    nxgl_coord_t y;
-    nxgl_coord_t xstep = g_snake_xres / 8;
-    nxgl_coord_t ystep = g_snake_yres / 8;
+// static void nxeg_drivemouse(void)
+// {
+//     nxgl_coord_t x;
+//     nxgl_coord_t y;
+//     nxgl_coord_t xstep = g_snake_xres / 8;
+//     nxgl_coord_t ystep = g_snake_yres / 8;
 
-    for (x = 0; x < g_snake_xres; x += xstep)
-    {
-        for (y = 0; y < g_snake_yres; y += ystep)
-        {
-            printf("nxeg_drivemouse: Mouse left button at (%d,%d)\n", x, y);
-            nx_mousein(g_snake_hnx, x, y, NX_MOUSE_LEFTBUTTON);
-        }
-    }
-}
+//     for (x = 0; x < g_snake_xres; x += xstep)
+//     {
+//         for (y = 0; y < g_snake_yres; y += ystep)
+//         {
+//             printf("nxeg_drivemouse: Mouse left button at (%d,%d)\n", x, y);
+//             nx_mousein(g_snake_hnx, x, y, NX_MOUSE_LEFTBUTTON);
+//         }
+//     }
+// }
 #endif
 
 /**
