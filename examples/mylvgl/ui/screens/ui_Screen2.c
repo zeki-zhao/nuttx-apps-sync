@@ -4,30 +4,22 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
+#include "modbus_data.h"
 
 lv_obj_t * ui_Screen2 = NULL;
-lv_obj_t * ui_Button3 = NULL;
-lv_obj_t * ui_Button4 = NULL;
 lv_obj_t * ui_TextArea1 = NULL;
 lv_obj_t * ui_TextArea2 = NULL;
 lv_obj_t * ui_Dropdown1 = NULL;
 lv_obj_t * ui_Keyboard1 = NULL;
+lv_obj_t * ui_Table1 = NULL;
+lv_obj_t * ui_ButtonHome2 = NULL;
 // event funtions
-void ui_event_Button3(lv_event_t * e)
+void ui_event_ButtonHome2(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen1, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Screen1_screen_init);
-    }
-}
-
-void ui_event_Button4(lv_event_t * e)
-{
-    lv_event_code_t event_code = lv_event_get_code(e);
-
-    if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen3, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Screen3_screen_init);
+        _ui_screen_change(&ui_HomeScreen, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_HomeScreen_screen_init);
     }
 }
 
@@ -51,32 +43,35 @@ void ui_event_TextArea2(lv_event_t * e)
 
 // build funtions
 
+static void ui_Table1_timer_cb(lv_timer_t * timer)
+{
+    char buf[MODBUS_VALUE_STR_MAX];
+
+    for (int i = 0; i < MODBUS_REG_COUNT; i++) {
+        lv_table_set_cell_value(
+            ui_Table1, i + 1, 1,
+            modbus_data_format_value(i, buf, sizeof(buf)));
+    }
+
+    lv_obj_invalidate(ui_Table1);
+}
+
 void ui_Screen2_screen_init(void)
 {
     ui_Screen2 = lv_obj_create(NULL);
     lv_obj_remove_flag(ui_Screen2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_Button3 = lv_button_create(ui_Screen2);
-    lv_obj_set_width(ui_Button3, 100);
-    lv_obj_set_height(ui_Button3, 50);
-    lv_obj_set_x(ui_Button3, -317);
-    lv_obj_set_y(ui_Button3, 190);
-    lv_obj_set_align(ui_Button3, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_Button3, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-    lv_obj_remove_flag(ui_Button3, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_bg_color(ui_Button3, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_Button3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_Button4 = lv_button_create(ui_Screen2);
-    lv_obj_set_width(ui_Button4, 100);
-    lv_obj_set_height(ui_Button4, 50);
-    lv_obj_set_x(ui_Button4, 326);
-    lv_obj_set_y(ui_Button4, 193);
-    lv_obj_set_align(ui_Button4, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_Button4, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-    lv_obj_remove_flag(ui_Button4, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_bg_color(ui_Button4, lv_color_hex(0x814848), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_Button4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Home button
+    ui_ButtonHome2 = lv_button_create(ui_Screen2);
+    lv_obj_set_width(ui_ButtonHome2, 90);
+    lv_obj_set_height(ui_ButtonHome2, 40);
+    lv_obj_align(ui_ButtonHome2, LV_ALIGN_TOP_LEFT, 10, 10);
+    lv_obj_set_style_bg_color(ui_ButtonHome2, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_ButtonHome2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_ButtonHome2, 8, LV_PART_MAIN);
+    lv_obj_t * label = lv_label_create(ui_ButtonHome2);
+    lv_label_set_text(label, "⌂ Home");
+    lv_obj_center(label);
 
     ui_TextArea1 = lv_textarea_create(ui_Screen2);
     lv_obj_set_width(ui_TextArea1, 150);
@@ -115,11 +110,73 @@ void ui_Screen2_screen_init(void)
     lv_obj_set_y(ui_Keyboard1, 55);
     lv_obj_set_align(ui_Keyboard1, LV_ALIGN_CENTER);
 
-    lv_obj_add_event_cb(ui_Button3, ui_event_Button3, LV_EVENT_ALL, NULL);
-    lv_obj_add_event_cb(ui_Button4, ui_event_Button4, LV_EVENT_ALL, NULL);
+    ui_Table1 = lv_table_create(ui_Screen2);
+    lv_obj_set_width(ui_Table1, 360);
+    lv_obj_set_height(ui_Table1, 300);
+    lv_obj_set_x(ui_Table1, -120);
+    lv_obj_set_y(ui_Table1, 30);
+    lv_obj_set_align(ui_Table1, LV_ALIGN_CENTER);
+    lv_obj_set_style_border_width(ui_Table1, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(ui_Table1, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
+
+    // Set column widths
+    lv_table_set_column_width(ui_Table1, 0, 100);
+    lv_table_set_column_width(ui_Table1, 1, 120);
+    lv_table_set_column_width(ui_Table1, 2, 100);
+
+    // Header row
+    lv_table_set_cell_value(ui_Table1, 0, 0, "Address");
+    lv_table_set_cell_value(ui_Table1, 0, 1, "Value");
+    lv_table_set_cell_value(ui_Table1, 0, 2, "Unit");
+    lv_obj_set_style_bg_color(ui_Table1, lv_color_hex(0x3AACB7), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Table1, lv_color_hex(0xFFFFFF), LV_PART_ITEMS | LV_STATE_DEFAULT);
+
+    // Data rows: Address, Value, Unit
+    lv_table_set_cell_value(ui_Table1, 1, 0, "0x0000");
+    lv_table_set_cell_value(ui_Table1, 1, 1, "25");
+    lv_table_set_cell_value(ui_Table1, 1, 2, "°C");
+
+    lv_table_set_cell_value(ui_Table1, 2, 0, "0x0001");
+    lv_table_set_cell_value(ui_Table1, 2, 1, "50");
+    lv_table_set_cell_value(ui_Table1, 2, 2, "%RH");
+
+    lv_table_set_cell_value(ui_Table1, 3, 0, "0x0002");
+    lv_table_set_cell_value(ui_Table1, 3, 1, "1013");
+    lv_table_set_cell_value(ui_Table1, 3, 2, "hPa");
+
+    lv_table_set_cell_value(ui_Table1, 4, 0, "0x0003");
+    lv_table_set_cell_value(ui_Table1, 4, 1, "220");
+    lv_table_set_cell_value(ui_Table1, 4, 2, "V");
+
+    lv_table_set_cell_value(ui_Table1, 5, 0, "0x0004");
+    lv_table_set_cell_value(ui_Table1, 5, 1, "5");
+    lv_table_set_cell_value(ui_Table1, 5, 2, "A");
+
+    lv_table_set_cell_value(ui_Table1, 6, 0, "0x0005");
+    lv_table_set_cell_value(ui_Table1, 6, 1, "1500");
+    lv_table_set_cell_value(ui_Table1, 6, 2, "RPM");
+
+    lv_table_set_cell_value(ui_Table1, 7, 0, "0x0006");
+    lv_table_set_cell_value(ui_Table1, 7, 1, "37");
+    lv_table_set_cell_value(ui_Table1, 7, 2, "°C");
+
+    lv_table_set_cell_value(ui_Table1, 8, 0, "0x0007");
+    lv_table_set_cell_value(ui_Table1, 8, 1, "75");
+    lv_table_set_cell_value(ui_Table1, 8, 2, "%");
+
+    lv_table_set_cell_value(ui_Table1, 9, 0, "0x0008");
+    lv_table_set_cell_value(ui_Table1, 9, 1, "12");
+    lv_table_set_cell_value(ui_Table1, 9, 2, "mA");
+
+    lv_table_set_cell_value(ui_Table1, 10, 0, "0x0009");
+    lv_table_set_cell_value(ui_Table1, 10, 1, "99");
+    lv_table_set_cell_value(ui_Table1, 10, 2, "%");
+
+    lv_obj_add_event_cb(ui_ButtonHome2, ui_event_ButtonHome2, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextArea1, ui_event_TextArea1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextArea2, ui_event_TextArea2, LV_EVENT_ALL, NULL);
 
+    lv_timer_create(ui_Table1_timer_cb, 500, NULL);
 }
 
 void ui_Screen2_screen_destroy(void)
@@ -128,11 +185,10 @@ void ui_Screen2_screen_destroy(void)
 
     // NULL screen variables
     ui_Screen2 = NULL;
-    ui_Button3 = NULL;
-    ui_Button4 = NULL;
     ui_TextArea1 = NULL;
     ui_TextArea2 = NULL;
     ui_Dropdown1 = NULL;
     ui_Keyboard1 = NULL;
-
+    ui_Table1 = NULL;
+    ui_ButtonHome2 = NULL;
 }

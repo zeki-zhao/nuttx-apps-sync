@@ -5,11 +5,14 @@
 #include <signal.h>
 #include <pthread.h>
 #include <mqueue.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "ui/ui.h"
 #include "lvgl_event.h"
 #include "led_handler.h"
 #include "sd_handler.h"
+#include "modbus_data.h"
 
 #undef NEED_BOARDINIT
 
@@ -22,6 +25,15 @@ static volatile bool g_running;
 static void sigint_handler(int sig)
 {
     g_running = false;
+}
+
+static void *modbus_data_thread(void *arg)
+{
+    while (g_running) {
+        usleep(2000000);
+        modbus_data_simulate();
+    }
+    return NULL;
 }
 
 int main(int argc, FAR char *argv[])
@@ -51,6 +63,9 @@ int main(int argc, FAR char *argv[])
 
     ui_init();
 
+    modbus_data_init();
+    srand(time(NULL));
+
     signal(SIGINT, sigint_handler);
 
     /* initialize event message queue */
@@ -66,6 +81,9 @@ int main(int argc, FAR char *argv[])
     pthread_t LvglEvent;
     pthread_create(&LvglEvent, NULL, LvglEventProcess, (void *)(intptr_t)mqd);
 
+    pthread_t ModbusThread;
+    pthread_create(&ModbusThread, NULL, modbus_data_thread, NULL);
+
     while (g_running){
         uint32_t idle;
         idle = lv_timer_handler();
@@ -73,6 +91,9 @@ int main(int argc, FAR char *argv[])
         usleep(idle * 1000);
     }
 
+    pthread_cancel(ModbusThread);
+    pthread_join(ModbusThread, NULL);
+    
     pthread_cancel(LvglEvent);
     pthread_join(LvglEvent, NULL);
     lvgl_event_fini();

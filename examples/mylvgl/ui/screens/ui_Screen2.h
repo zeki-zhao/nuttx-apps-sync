@@ -14,16 +14,15 @@ extern "C" {
 extern void ui_Screen2_screen_init(void);
 extern void ui_Screen2_screen_destroy(void);
 extern lv_obj_t * ui_Screen2;
-extern void ui_event_Button3(lv_event_t * e);
-extern lv_obj_t * ui_Button3;
-extern void ui_event_Button4(lv_event_t * e);
-extern lv_obj_t * ui_Button4;
 extern void ui_event_TextArea1(lv_event_t * e);
 extern lv_obj_t * ui_TextArea1;
 extern void ui_event_TextArea2(lv_event_t * e);
 extern lv_obj_t * ui_TextArea2;
 extern lv_obj_t * ui_Dropdown1;
 extern lv_obj_t * ui_Keyboard1;
+extern lv_obj_t * ui_Table1;
+extern void ui_event_ButtonHome2(lv_event_t * e);
+extern lv_obj_t * ui_ButtonHome2;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus
@@ -31,4 +30,3 @@ extern lv_obj_t * ui_Keyboard1;
 #endif
 
 #endif
-

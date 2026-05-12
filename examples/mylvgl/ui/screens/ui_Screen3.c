@@ -6,28 +6,18 @@
 #include "../ui.h"
 
 lv_obj_t * ui_Screen3 = NULL;
-lv_obj_t * ui_Button5 = NULL;
-lv_obj_t * ui_Button6 = NULL;
 lv_obj_t * ui_TextArea3 = NULL;
 lv_obj_t * ui_Keyboard2 = NULL;
 lv_obj_t * ui_Button7 = NULL;
 lv_obj_t * ui_Label2 = NULL;
+lv_obj_t * ui_ButtonHome3 = NULL;
 // event funtions
-void ui_event_Button5(lv_event_t * e)
+void ui_event_ButtonHome3(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen2, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Screen2_screen_init);
-    }
-}
-
-void ui_event_Button6(lv_event_t * e)
-{
-    lv_event_code_t event_code = lv_event_get_code(e);
-
-    if(event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen3, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Screen3_screen_init);
+        _ui_screen_change(&ui_HomeScreen, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_HomeScreen_screen_init);
     }
 }
 
@@ -56,48 +46,38 @@ void ui_Screen3_screen_init(void)
     ui_Screen3 = lv_obj_create(NULL);
     lv_obj_remove_flag(ui_Screen3, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_Button5 = lv_button_create(ui_Screen3);
-    lv_obj_set_width(ui_Button5, 100);
-    lv_obj_set_height(ui_Button5, 50);
-    lv_obj_set_x(ui_Button5, -317);
-    lv_obj_set_y(ui_Button5, 190);
-    lv_obj_set_align(ui_Button5, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_Button5, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-    lv_obj_remove_flag(ui_Button5, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_bg_color(ui_Button5, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_Button5, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_Button6 = lv_button_create(ui_Screen3);
-    lv_obj_set_width(ui_Button6, 100);
-    lv_obj_set_height(ui_Button6, 50);
-    lv_obj_set_x(ui_Button6, 326);
-    lv_obj_set_y(ui_Button6, 193);
-    lv_obj_set_align(ui_Button6, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_Button6, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-    lv_obj_remove_flag(ui_Button6, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_bg_color(ui_Button6, lv_color_hex(0x814848), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_Button6, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Home button
+    ui_ButtonHome3 = lv_button_create(ui_Screen3);
+    lv_obj_set_width(ui_ButtonHome3, 90);
+    lv_obj_set_height(ui_ButtonHome3, 40);
+    lv_obj_align(ui_ButtonHome3, LV_ALIGN_TOP_LEFT, 10, 10);
+    lv_obj_set_style_bg_color(ui_ButtonHome3, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_ButtonHome3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_ButtonHome3, 8, LV_PART_MAIN);
+    lv_obj_t * label = lv_label_create(ui_ButtonHome3);
+    lv_label_set_text(label, "⌂ Home");
+    lv_obj_center(label);
 
     ui_TextArea3 = lv_textarea_create(ui_Screen3);
     lv_obj_set_width(ui_TextArea3, 363);
-    lv_obj_set_height(ui_TextArea3, 150);
+    lv_obj_set_height(ui_TextArea3, 140);
     lv_obj_set_x(ui_TextArea3, -149);
-    lv_obj_set_y(ui_TextArea3, -127);
+    lv_obj_set_y(ui_TextArea3, -100);
     lv_obj_set_align(ui_TextArea3, LV_ALIGN_CENTER);
     lv_textarea_set_placeholder_text(ui_TextArea3, "Input word...");
 
     ui_Keyboard2 = lv_keyboard_create(ui_Screen3);
     lv_obj_set_width(ui_Keyboard2, 555);
-    lv_obj_set_height(ui_Keyboard2, 136);
+    lv_obj_set_height(ui_Keyboard2, 120);
     lv_obj_set_x(ui_Keyboard2, -63);
-    lv_obj_set_y(ui_Keyboard2, 55);
+    lv_obj_set_y(ui_Keyboard2, 60);
     lv_obj_set_align(ui_Keyboard2, LV_ALIGN_CENTER);
 
     ui_Button7 = lv_button_create(ui_Screen3);
     lv_obj_set_width(ui_Button7, 100);
     lv_obj_set_height(ui_Button7, 50);
-    lv_obj_set_x(ui_Button7, 325);
-    lv_obj_set_y(ui_Button7, 75);
+    lv_obj_set_x(ui_Button7, 305);
+    lv_obj_set_y(ui_Button7, 70);
     lv_obj_set_align(ui_Button7, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_Button7, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_remove_flag(ui_Button7, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -110,11 +90,9 @@ void ui_Screen3_screen_init(void)
     lv_obj_set_align(ui_Label2, LV_ALIGN_CENTER);
     lv_label_set_text(ui_Label2, "save to SD");
 
-    lv_obj_add_event_cb(ui_Button5, ui_event_Button5, LV_EVENT_ALL, NULL);
-    lv_obj_add_event_cb(ui_Button6, ui_event_Button6, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_ButtonHome3, ui_event_ButtonHome3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextArea3, ui_event_TextArea3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Button7, ui_event_Button7, LV_EVENT_ALL, NULL);
-
 }
 
 void ui_Screen3_screen_destroy(void)
@@ -123,11 +101,9 @@ void ui_Screen3_screen_destroy(void)
 
     // NULL screen variables
     ui_Screen3 = NULL;
-    ui_Button5 = NULL;
-    ui_Button6 = NULL;
     ui_TextArea3 = NULL;
     ui_Keyboard2 = NULL;
     ui_Button7 = NULL;
     ui_Label2 = NULL;
-
+    ui_ButtonHome3 = NULL;
 }

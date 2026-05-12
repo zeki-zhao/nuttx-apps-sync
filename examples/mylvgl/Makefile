@@ -31,9 +31,11 @@ MODULE = $(CONFIG_EXAMPLES_MY_LVGL)
 
 MAINSRC = mylvgl.c
 
+CSRCS += modbus_data.c
 CSRCS += ui/ui.c
 CSRCS += ui/ui_helpers.c
 CSRCS += ui/ui_events.c
+CSRCS += ui/screens/ui_HomeScreen.c
 CSRCS += ui/screens/ui_Screen1.c
 CSRCS += ui/components/ui_comp.c
 CSRCS += ui/components/ui_comp_changeled.c
