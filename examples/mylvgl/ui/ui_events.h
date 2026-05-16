@@ -13,6 +13,7 @@ extern "C" {
 void Led1Change(lv_event_t * e);
 void Led2Change(lv_event_t * e);
 void Led3Change(lv_event_t * e);
+void led_sync_all(void);
 void SaveToSd(lv_event_t * e);
 
 #ifdef __cplusplus

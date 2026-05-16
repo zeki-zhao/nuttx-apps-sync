@@ -65,7 +65,7 @@ int main(int argc, FAR char *argv[])
 
     modbus_data_init();
     srand(time(NULL));
-
+    
     signal(SIGINT, sigint_handler);
 
     /* initialize event message queue */
@@ -75,13 +75,15 @@ int main(int argc, FAR char *argv[])
         goto error;
     }
 
-    lvgl_evt_register(LVGL_MSG_TOGGLE_LED, toggle_led_handler);
+    lvgl_evt_register(LVGL_MSG_SET_LED, set_led_handler);
+    lvgl_evt_register(LVGL_MSG_SAVE_LED_STATUS, save_led_status_handler);
     lvgl_evt_register(LVGL_MSG_SAVE_TEXT, save_text_handler);
+    
 
-    pthread_t LvglEvent;
+    pthread_t LvglEvent; /* lvgl消息队列处理线程 */
     pthread_create(&LvglEvent, NULL, LvglEventProcess, (void *)(intptr_t)mqd);
 
-    pthread_t ModbusThread;
+    pthread_t ModbusThread; /* modbus数据模拟线程 */
     pthread_create(&ModbusThread, NULL, modbus_data_thread, NULL);
 
     while (g_running){

@@ -7,8 +7,6 @@
 
 #include "lvgl_event.h"
 
-#define LVGL_EVENT_MQ_NAME  "/lvgl_evt"
-
 static mqd_t g_lvgl_mqd = (mqd_t)-1;
 
 /* registration table */
@@ -72,37 +70,12 @@ void lvgl_event_fini(void)
     }
 }
 
-int lvgl_event_send_toggle_led(uint8_t led_num)
+
+mqd_t lvgl_event_get_mqd(const char *name)
 {
-    if (g_lvgl_mqd == (mqd_t)-1)
-        return -ENODEV;
-
-    struct lvgl_msg_s msg =
-    {
-        .type    = LVGL_MSG_TOGGLE_LED,
-        .led_num = led_num,
-    };
-    return mq_send(g_lvgl_mqd, (const char *)&msg, sizeof(msg), 0);
-}
-
-int lvgl_event_send_text(const char *text)
-{
-    if (g_lvgl_mqd == (mqd_t)-1 || !text)
-        return -ENODEV;
-
-    struct lvgl_msg_s msg;
-    msg.type = LVGL_MSG_SAVE_TEXT;
-    msg.text = strdup(text);
-    if (!msg.text)
-        return -ENOMEM;
-
-    int ret = mq_send(g_lvgl_mqd, (const char *)&msg, sizeof(msg), 0);
-    if (ret < 0)
-    {
-        free(msg.text);
-        return ret;
-    }
-    return OK;
+    if (name && strcmp(name, LVGL_EVENT_MQ_NAME) == 0)
+        return g_lvgl_mqd;
+    return (mqd_t)-1;
 }
 
 static void handle_event(const struct lvgl_msg_s *msg)

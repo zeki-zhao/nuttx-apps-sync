@@ -4,12 +4,14 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
+#include "led_handler.h"
 
 lv_obj_t * ui_Screen1 = NULL;
 lv_obj_t * ui_Switch1 = NULL;
 lv_obj_t * ui_Switch2 = NULL;
 lv_obj_t * ui_Switch3 = NULL;
 lv_obj_t * ui_Button1 = NULL;
+static lv_timer_t * ui_Screen1_sync_timer = NULL;
 
 // event funtions
 void ui_event_Switch1(lv_event_t * e)
@@ -49,6 +51,11 @@ void ui_event_Button1(lv_event_t * e)
 }
 
 // build funtions
+
+static void ui_Screen1_sync_cb(lv_timer_t * t)
+{
+    led_sync_all();
+}
 
 void ui_Screen1_screen_init(void)
 {
@@ -92,10 +99,21 @@ void ui_Screen1_screen_init(void)
     lv_obj_add_event_cb(ui_Switch2, ui_event_Switch2, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Switch3, ui_event_Switch3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Button1, ui_event_Button1, LV_EVENT_ALL, NULL);
+
+    led_state_init();
+    led_sync_all();
+
+    ui_Screen1_sync_timer = lv_timer_create(ui_Screen1_sync_cb, 500, NULL);
 }
 
 void ui_Screen1_screen_destroy(void)
 {
+    if (ui_Screen1_sync_timer)
+    {
+        lv_timer_del(ui_Screen1_sync_timer);
+        ui_Screen1_sync_timer = NULL;
+    }
+
     if(ui_Screen1) lv_obj_del(ui_Screen1);
 
     // NULL screen variables

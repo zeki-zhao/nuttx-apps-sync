@@ -4,12 +4,15 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
+#include <signal.h>
 
 lv_obj_t * ui_HomeScreen = NULL;
 lv_obj_t * ui_ButtonTheme = NULL;
 lv_obj_t * ui_btnToScreen1 = NULL;
 lv_obj_t * ui_btnToScreen2 = NULL;
 lv_obj_t * ui_btnToScreen3 = NULL;
+
+lv_obj_t * ui_btnExitApp = NULL;
 
 static bool ui_theme_dark = false;
 static lv_obj_t * ui_title_label = NULL;
@@ -66,6 +69,15 @@ void ui_event_btnToScreen3(lv_event_t * e)
     }
 }
 
+void ui_event_btnExitApp(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if (event_code == LV_EVENT_CLICKED) {
+        raise(SIGINT);
+    }
+}
+
 // build functions
 
 static void add_label_to_btn(lv_obj_t * btn, const char * text)
@@ -84,7 +96,7 @@ void ui_HomeScreen_screen_init(void)
     // Title
     ui_title_label = lv_label_create(ui_HomeScreen);
     lv_label_set_text(ui_title_label, "Main Menu");
-    lv_obj_set_style_text_font(ui_title_label, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_font(ui_title_label, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_style_text_color(ui_title_label, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_align(ui_title_label, LV_ALIGN_TOP_MID, 0, 30);
 
@@ -98,6 +110,19 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_text_color(ui_ButtonTheme, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_set_style_radius(ui_ButtonTheme, 8, LV_PART_MAIN);
     add_label_to_btn(ui_ButtonTheme, "Switch Theme");
+
+    // Exit button (circular, top-right)
+    ui_btnExitApp = lv_button_create(ui_HomeScreen);
+    lv_obj_set_width(ui_btnExitApp, 44);
+    lv_obj_set_height(ui_btnExitApp, 44);
+    lv_obj_align(ui_btnExitApp, LV_ALIGN_TOP_RIGHT, -10, 10);
+    lv_obj_set_style_radius(ui_btnExitApp, 22, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_btnExitApp, lv_color_hex(0xE05050), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_btnExitApp, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_btnExitApp, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_t * exit_label = lv_label_create(ui_btnExitApp);
+    lv_label_set_text(exit_label, "✕");
+    lv_obj_center(exit_label);
 
     // Navigation buttons
     ui_btnToScreen1 = lv_button_create(ui_HomeScreen);
@@ -132,6 +157,7 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_add_event_cb(ui_btnToScreen1, ui_event_btnToScreen1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen2, ui_event_btnToScreen2, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen3, ui_event_btnToScreen3, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_btnExitApp, ui_event_btnExitApp, LV_EVENT_ALL, NULL);
 }
 
 void ui_HomeScreen_screen_destroy(void)
@@ -143,4 +169,5 @@ void ui_HomeScreen_screen_destroy(void)
     ui_btnToScreen1 = NULL;
     ui_btnToScreen2 = NULL;
     ui_btnToScreen3 = NULL;
+    ui_btnExitApp = NULL;
 }
