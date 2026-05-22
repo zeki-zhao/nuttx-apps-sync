@@ -9,22 +9,16 @@
 #include "lvgl_event.h"
 #include <arch/board/board_paths.h>
 
-#define SD_SAVE_DIR  SD_LOG_DIR
 #define SD_SAVE_FILE  "lvgl_input.txt"
-
-#define FILE_C_NAME  "lvgl_asd.c"
 
 void save_text_handler(const struct lvgl_msg_s *msg)
 {
     if (!msg->text)
         return;
 
-    /* create TEST directory if it doesn't exist */
-    mkdir(SD_SAVE_DIR, 0777);
-
     /* generate unique filename with a counter */
     char path[128];
-    snprintf(path, sizeof(path), SD_SAVE_DIR "/" SD_SAVE_FILE);
+    snprintf(path, sizeof(path), SD_LOG_DIR "/" SD_SAVE_FILE);
 
     FILE *fp = fopen(path, "w");
     if (fp){
@@ -36,32 +30,47 @@ void save_text_handler(const struct lvgl_msg_s *msg)
     }
 
     free(msg->text);
-
-    // cJSON *root;
-    // char *out;
-    // static const char *strings[7] =
-    // {
-    //     "Sunday", "Monday", "Tuesday", "Wednesday",
-    //     "Thursday", "Friday", "Saturday"
-    // };
-    // root = cJSON_CreateStringArray(strings, 7);
-    // out = cJSON_Print(root);
-    // cJSON_Delete(root);
-    // printf("%s\n", out);
-    // free(out);
+}
 
 
-    memset(path, 0, sizeof(path));
-    snprintf(path, sizeof(path), SD_SAVE_DIR "/" FILE_C_NAME);
-    FILE *fp2 = fopen(path, "w");
-    if (fp2) {
-        fwrite("hello\n", 1, strlen("hello\n"), fp2);
-        fclose(fp2);
-        printf("Created: %s\n", path);
-    }else{
+void save_modbus_slave_show_config_hander(const struct lvgl_msg_s *msg)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "start_addr", msg->start_addr);
+    cJSON_AddNumberToObject(root, "num_rows", msg->num_rows);
+    cJSON_AddNumberToObject(root, "reg_type", msg->reg_type);
+
+    char *out = cJSON_Print(root);
+    printf("%s\n", out);
+
+    char path[128];
+    snprintf(path, sizeof(path), SD_CONFIG_DIR "/modbus_slave_show_config.json");
+    FILE *fp = fopen(path, "w");
+    if (fp) {
+        fwrite(out, 1, strlen(out), fp);
+        fclose(fp);
+        printf("Saved: %s\n", path);
+    } else {
         printf("ERROR: Failed to write %s: %d\n", path, errno);
     }
 
+    cJSON_Delete(root);
+    free(out);
+}
+
+int lvgl_event_send_modbus_slave_config(int start_addr, int num_rows, int reg_type)
+{
+    mqd_t lvgl_mqd = lvgl_event_get_mqd(LVGL_EVENT_MQ_NAME);
+    if (lvgl_mqd == (mqd_t)-1)
+        return -ENODEV;
+
+    struct lvgl_msg_s msg;
+    msg.type       = LVGL_MSG_SAVE_MODBUS_SLAVE_CONFIG;
+    msg.start_addr = start_addr;
+    msg.num_rows   = num_rows;
+    msg.reg_type   = reg_type;
+
+    return mq_send(lvgl_mqd, (const char *)&msg, sizeof(msg), 0);
 }
 
 int lvgl_event_send_text(const char *text)

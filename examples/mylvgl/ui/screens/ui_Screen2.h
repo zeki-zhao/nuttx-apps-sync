@@ -19,10 +19,14 @@ extern lv_obj_t * ui_TextArea1;
 extern void ui_event_TextArea2(lv_event_t * e);
 extern lv_obj_t * ui_TextArea2;
 extern lv_obj_t * ui_Dropdown1;
+extern void ui_event_Dropdown1(lv_event_t * e);
+extern void ui_event_Keyboard1(lv_event_t * e);
 extern lv_obj_t * ui_Keyboard1;
 extern lv_obj_t * ui_Table1;
 extern void ui_event_ButtonHome2(lv_event_t * e);
 extern lv_obj_t * ui_ButtonHome2;
+extern void ui_event_ButtonConfirm1(lv_event_t * e);
+extern lv_obj_t * ui_ButtonConfirm1;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

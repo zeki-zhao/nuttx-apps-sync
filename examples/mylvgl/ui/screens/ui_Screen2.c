@@ -4,7 +4,10 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
-#include "modbus_data.h"
+#include "modbus_slave.h"
+#include "lvgl_event.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 lv_obj_t * ui_Screen2 = NULL;
 lv_obj_t * ui_TextArea1 = NULL;
@@ -13,6 +16,7 @@ lv_obj_t * ui_Dropdown1 = NULL;
 lv_obj_t * ui_Keyboard1 = NULL;
 lv_obj_t * ui_Table1 = NULL;
 lv_obj_t * ui_ButtonHome2 = NULL;
+lv_obj_t * ui_ButtonConfirm1 = NULL;
 // event funtions
 void ui_event_ButtonHome2(lv_event_t * e)
 {
@@ -27,8 +31,12 @@ void ui_event_TextArea1(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
-    if(event_code == LV_EVENT_CLICKED) {
+    if(event_code == LV_EVENT_FOCUSED) {
         _ui_keyboard_set_target(ui_Keyboard1,  ui_TextArea1);
+        lv_obj_remove_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
+    }
+    if(event_code == LV_EVENT_DEFOCUSED) {
+        lv_obj_add_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
@@ -36,24 +44,101 @@ void ui_event_TextArea2(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
-    if(event_code == LV_EVENT_CLICKED) {
+    if(event_code == LV_EVENT_FOCUSED) {
         _ui_keyboard_set_target(ui_Keyboard1,  ui_TextArea2);
+        lv_obj_remove_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
+    }
+    if(event_code == LV_EVENT_DEFOCUSED) {
+        lv_obj_add_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void ui_event_Keyboard1(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if(event_code == LV_EVENT_READY) {
+        lv_obj_add_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void ui_event_Dropdown1(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if(event_code == LV_EVENT_VALUE_CHANGED) {
+        lv_obj_set_style_text_color(ui_Dropdown1, lv_color_hex(0x999999), LV_PART_MAIN);
     }
 }
 
 // build funtions
 
+static int s_table_start_addr = 0;
+static int s_table_num_rows = 0;
+static int s_reg_type = 0; // 仅 confirm 时更新，timer 只读此值
+
 static void ui_Table1_timer_cb(lv_timer_t * timer)
 {
-    char buf[MODBUS_VALUE_STR_MAX];
+    int reg_type = s_reg_type; // 仅读取 confirm 时固定的值
+    const char *reg_name = (reg_type == 0) ? "InputReg" : "HoldingReg";
 
-    for (int i = 0; i < MODBUS_REG_COUNT; i++) {
-        lv_table_set_cell_value(
-            ui_Table1, i + 1, 1,
-            modbus_data_format_value(i, buf, sizeof(buf)));
+    lv_table_set_row_cnt(ui_Table1, s_table_num_rows + 2);
+
+    char buf[MODBUS_VALUE_STR_MAX];
+    // Title row — centered across both columns
+    snprintf(buf, sizeof(buf), "-- %s --", reg_name);
+    lv_table_set_cell_value(ui_Table1, 0, 0, buf);
+    lv_table_add_cell_ctrl(ui_Table1, 0, 0, LV_TABLE_CELL_CTRL_MERGE_RIGHT);
+
+    // Column headers
+    lv_table_set_cell_value(ui_Table1, 1, 0, "Address");
+    lv_table_set_cell_value(ui_Table1, 1, 1, "Value");
+
+    for (int i = 0; i < s_table_num_rows; i++)
+    {
+        int reg = s_table_start_addr + i;
+        int row = i + 2;
+
+        snprintf(buf, sizeof(buf), "0x%04X", s_table_start_addr + i);
+        lv_table_set_cell_value(ui_Table1, row, 0, buf);
+
+        uint16_t val = modbus_slave_read_reg(reg_type, reg);
+        snprintf(buf, sizeof(buf), "%d", val);
+        lv_table_set_cell_value(ui_Table1, row, 1, buf);
     }
 
     lv_obj_invalidate(ui_Table1);
+}
+
+void ui_event_ButtonConfirm1(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if(event_code == LV_EVENT_CLICKED) {
+        s_reg_type = lv_dropdown_get_selected(ui_Dropdown1);
+        const char *addr_text = lv_textarea_get_text(ui_TextArea1);
+        s_table_start_addr = 0;
+        if (addr_text && addr_text[0] != '\0')
+            s_table_start_addr = strtol(addr_text, NULL, 16);
+
+        const char *num_text = lv_textarea_get_text(ui_TextArea2);
+        s_table_num_rows = 0;
+        if (num_text && num_text[0] != '\0')
+            s_table_num_rows = strtol(num_text, NULL, 10);
+
+        if (s_table_start_addr >= MODBUS_REG_ARRAY_SIZE)
+            s_table_num_rows = 0;
+        else if (s_table_num_rows > MODBUS_REG_ARRAY_SIZE - s_table_start_addr)
+            s_table_num_rows = MODBUS_REG_ARRAY_SIZE - s_table_start_addr;
+
+        lv_table_set_row_cnt(ui_Table1, s_table_num_rows + 2);
+        ui_Table1_timer_cb(NULL);
+
+        lv_obj_set_style_text_color(ui_Dropdown1, lv_color_hex(0x000000), LV_PART_MAIN);
+
+        lvgl_event_send_modbus_slave_config(s_table_start_addr, s_table_num_rows,
+                                             lv_dropdown_get_selected(ui_Dropdown1));
+    }
 }
 
 void ui_Screen2_screen_init(void)
@@ -66,8 +151,8 @@ void ui_Screen2_screen_init(void)
     lv_obj_set_width(ui_ButtonHome2, 90);
     lv_obj_set_height(ui_ButtonHome2, 40);
     lv_obj_align(ui_ButtonHome2, LV_ALIGN_TOP_LEFT, 10, 10);
-    lv_obj_set_style_bg_color(ui_ButtonHome2, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_ButtonHome2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_ButtonHome2, lv_color_hex(0x999999), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_ButtonHome2, 180, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_ButtonHome2, 8, LV_PART_MAIN);
     lv_obj_t * label = lv_label_create(ui_ButtonHome2);
     lv_label_set_text(label, "⌂ Home");
@@ -75,106 +160,85 @@ void ui_Screen2_screen_init(void)
 
     ui_TextArea1 = lv_textarea_create(ui_Screen2);
     lv_obj_set_width(ui_TextArea1, 150);
-    lv_obj_set_height(ui_TextArea1, 38);
+    lv_obj_set_height(ui_TextArea1, 48);
     lv_obj_set_x(ui_TextArea1, 264);
     lv_obj_set_y(ui_TextArea1, -178);
     lv_obj_set_align(ui_TextArea1, LV_ALIGN_CENTER);
-    if("1234567890" == "") lv_textarea_set_accepted_chars(ui_TextArea1, NULL);
-    else lv_textarea_set_accepted_chars(ui_TextArea1, "1234567890");
+    lv_textarea_set_accepted_chars(ui_TextArea1, "1234567890");
     lv_textarea_set_placeholder_text(ui_TextArea1, "RegAddr");
 
     ui_TextArea2 = lv_textarea_create(ui_Screen2);
     lv_obj_set_width(ui_TextArea2, 150);
-    lv_obj_set_height(ui_TextArea2, 38);
+    lv_obj_set_height(ui_TextArea2, 48);
     lv_obj_set_x(ui_TextArea2, 263);
-    lv_obj_set_y(ui_TextArea2, -121);
+    lv_obj_set_y(ui_TextArea2, -110);
     lv_obj_set_align(ui_TextArea2, LV_ALIGN_CENTER);
-    if("1234567890" == "") lv_textarea_set_accepted_chars(ui_TextArea2, NULL);
-    else lv_textarea_set_accepted_chars(ui_TextArea2, "1234567890");
+    lv_textarea_set_accepted_chars(ui_TextArea2, "1234567890");
     lv_textarea_set_placeholder_text(ui_TextArea2, "RegNum");
 
+    // Confirm button to apply address/row-count settings
     ui_Dropdown1 = lv_dropdown_create(ui_Screen2);
     lv_dropdown_set_options(ui_Dropdown1, "InputReg\nHoldingReg");
     lv_obj_set_width(ui_Dropdown1, 150);
     lv_obj_set_height(ui_Dropdown1, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_x(ui_Dropdown1, 265);
-    lv_obj_set_y(ui_Dropdown1, -60);
+    lv_obj_set_y(ui_Dropdown1, -55);
     lv_obj_set_align(ui_Dropdown1, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_Dropdown1, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+
+    ui_ButtonConfirm1 = lv_button_create(ui_Screen2);
+    lv_obj_set_width(ui_ButtonConfirm1, 150);
+    lv_obj_set_height(ui_ButtonConfirm1, 40);
+    lv_obj_set_x(ui_ButtonConfirm1, 265);
+    lv_obj_set_y(ui_ButtonConfirm1, 0);
+    lv_obj_set_align(ui_ButtonConfirm1, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(ui_ButtonConfirm1, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_ButtonConfirm1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_ButtonConfirm1, 8, LV_PART_MAIN);
+    lv_obj_t * confirm_label = lv_label_create(ui_ButtonConfirm1);
+    lv_label_set_text(confirm_label, "Confirm");
+    lv_obj_center(confirm_label);
 
     ui_Keyboard1 = lv_keyboard_create(ui_Screen2);
     lv_keyboard_set_mode(ui_Keyboard1, LV_KEYBOARD_MODE_NUMBER);
-    lv_obj_set_width(ui_Keyboard1, 193);
-    lv_obj_set_height(ui_Keyboard1, 120);
-    lv_obj_set_x(ui_Keyboard1, 249);
-    lv_obj_set_y(ui_Keyboard1, 55);
+    lv_obj_set_width(ui_Keyboard1, 260);
+    lv_obj_set_height(ui_Keyboard1, 160);
+    lv_obj_set_x(ui_Keyboard1, 260);
+    lv_obj_set_y(ui_Keyboard1, 115);
     lv_obj_set_align(ui_Keyboard1, LV_ALIGN_CENTER);
+    lv_obj_add_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
 
     ui_Table1 = lv_table_create(ui_Screen2);
-    lv_obj_set_width(ui_Table1, 360);
-    lv_obj_set_height(ui_Table1, 300);
-    lv_obj_set_x(ui_Table1, -120);
-    lv_obj_set_y(ui_Table1, 30);
-    lv_obj_set_align(ui_Table1, LV_ALIGN_CENTER);
+    lv_obj_set_width(ui_Table1, 520);
+    lv_obj_set_height(ui_Table1, 460);
+    lv_obj_align(ui_Table1, LV_ALIGN_LEFT_MID, 5, 0);
     lv_obj_set_style_border_width(ui_Table1, 1, LV_PART_MAIN);
     lv_obj_set_style_border_color(ui_Table1, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
 
-    // Set column widths
-    lv_table_set_column_width(ui_Table1, 0, 100);
-    lv_table_set_column_width(ui_Table1, 1, 120);
-    lv_table_set_column_width(ui_Table1, 2, 100);
+    // Set column count and widths (Address, Value — no Unit column)
+    lv_table_set_col_cnt(ui_Table1, 2);
+    lv_table_set_column_width(ui_Table1, 0, 180);
+    lv_table_set_column_width(ui_Table1, 1, 320);
 
-    // Header row
-    lv_table_set_cell_value(ui_Table1, 0, 0, "Address");
-    lv_table_set_cell_value(ui_Table1, 0, 1, "Value");
-    lv_table_set_cell_value(ui_Table1, 0, 2, "Unit");
+    // Initial title row (merged), header row; data rows filled by timer
+    lv_table_set_row_cnt(ui_Table1, 2);
+    lv_table_set_cell_value(ui_Table1, 0, 0, "--- InputReg ---");
+    lv_table_add_cell_ctrl(ui_Table1, 0, 0, LV_TABLE_CELL_CTRL_MERGE_RIGHT);
+
+    lv_table_set_cell_value(ui_Table1, 1, 0, "Address");
+    lv_table_set_cell_value(ui_Table1, 1, 1, "Value");
+
     lv_obj_set_style_bg_color(ui_Table1, lv_color_hex(0x3AACB7), LV_PART_ITEMS | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui_Table1, lv_color_hex(0xFFFFFF), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui_Table1, LV_TEXT_ALIGN_CENTER, LV_PART_ITEMS);
 
-    // Data rows: Address, Value, Unit
-    lv_table_set_cell_value(ui_Table1, 1, 0, "0x0000");
-    lv_table_set_cell_value(ui_Table1, 1, 1, "25");
-    lv_table_set_cell_value(ui_Table1, 1, 2, "°C");
-
-    lv_table_set_cell_value(ui_Table1, 2, 0, "0x0001");
-    lv_table_set_cell_value(ui_Table1, 2, 1, "50");
-    lv_table_set_cell_value(ui_Table1, 2, 2, "%RH");
-
-    lv_table_set_cell_value(ui_Table1, 3, 0, "0x0002");
-    lv_table_set_cell_value(ui_Table1, 3, 1, "1013");
-    lv_table_set_cell_value(ui_Table1, 3, 2, "hPa");
-
-    lv_table_set_cell_value(ui_Table1, 4, 0, "0x0003");
-    lv_table_set_cell_value(ui_Table1, 4, 1, "220");
-    lv_table_set_cell_value(ui_Table1, 4, 2, "V");
-
-    lv_table_set_cell_value(ui_Table1, 5, 0, "0x0004");
-    lv_table_set_cell_value(ui_Table1, 5, 1, "5");
-    lv_table_set_cell_value(ui_Table1, 5, 2, "A");
-
-    lv_table_set_cell_value(ui_Table1, 6, 0, "0x0005");
-    lv_table_set_cell_value(ui_Table1, 6, 1, "1500");
-    lv_table_set_cell_value(ui_Table1, 6, 2, "RPM");
-
-    lv_table_set_cell_value(ui_Table1, 7, 0, "0x0006");
-    lv_table_set_cell_value(ui_Table1, 7, 1, "37");
-    lv_table_set_cell_value(ui_Table1, 7, 2, "°C");
-
-    lv_table_set_cell_value(ui_Table1, 8, 0, "0x0007");
-    lv_table_set_cell_value(ui_Table1, 8, 1, "75");
-    lv_table_set_cell_value(ui_Table1, 8, 2, "%");
-
-    lv_table_set_cell_value(ui_Table1, 9, 0, "0x0008");
-    lv_table_set_cell_value(ui_Table1, 9, 1, "12");
-    lv_table_set_cell_value(ui_Table1, 9, 2, "mA");
-
-    lv_table_set_cell_value(ui_Table1, 10, 0, "0x0009");
-    lv_table_set_cell_value(ui_Table1, 10, 1, "99");
-    lv_table_set_cell_value(ui_Table1, 10, 2, "%");
+    lv_obj_move_foreground(ui_ButtonHome2);
 
     lv_obj_add_event_cb(ui_ButtonHome2, ui_event_ButtonHome2, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextArea1, ui_event_TextArea1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextArea2, ui_event_TextArea2, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_ButtonConfirm1, ui_event_ButtonConfirm1, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_Keyboard1, ui_event_Keyboard1, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_Dropdown1, ui_event_Dropdown1, LV_EVENT_ALL, NULL);
 
     lv_timer_create(ui_Table1_timer_cb, 500, NULL);
 }
@@ -191,4 +255,5 @@ void ui_Screen2_screen_destroy(void)
     ui_Keyboard1 = NULL;
     ui_Table1 = NULL;
     ui_ButtonHome2 = NULL;
+    ui_ButtonConfirm1 = NULL;
 }

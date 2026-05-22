@@ -9,5 +9,6 @@
  * @param msg 
  */
 void save_text_handler(const struct lvgl_msg_s *msg);
+void save_modbus_slave_show_config_hander(const struct lvgl_msg_s *msg);
 
 #endif /* __SD_HANDLER_H */

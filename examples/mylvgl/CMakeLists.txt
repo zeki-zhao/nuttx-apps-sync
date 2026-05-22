@@ -39,7 +39,10 @@ if(CONFIG_EXAMPLES_MY_LVGL)
     lvgl_event.c
     led_handler.c
     sd_handler.c
-    modbus_data.c
+    modbus_slave.c
+    modbus_slave_instance.c
+    ParameterInfo.c
+    nsh_terminal.c
     INCLUDE_DIRECTORIES
     .
     ui)
