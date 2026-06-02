@@ -37,6 +37,7 @@ static void *modbus_data_thread(void *arg)
     while (g_running) {
         modbus_serial_poll();
     }
+    return 0;
 }
 
 static void *modbus_timer_thread(void *arg)
@@ -45,6 +46,7 @@ static void *modbus_timer_thread(void *arg)
         modbus_timer_tick();
         usleep(1000);  /* 1 ms */
     }
+    return 0;
 }
 
 static void restore_modbus_slave_config(void)

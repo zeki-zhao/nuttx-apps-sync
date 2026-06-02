@@ -81,7 +81,7 @@ static void file_click_cb(lv_event_t *e)
 {
     int idx = (int)(uintptr_t)lv_event_get_user_data(e);
 
-    char fullpath[256];
+    char fullpath[PATH_MAX];
     snprintf(fullpath, sizeof(fullpath), "%s/%s",
              g_current_path, g_entry_names[idx]);
 
@@ -114,7 +114,7 @@ static void scan_directory(void)
     }
 
     struct stat statbuf;
-    char fullpath[256];
+    char fullpath[PATH_MAX];
     struct dirent *entry;
 
     g_entry_count = 0;
