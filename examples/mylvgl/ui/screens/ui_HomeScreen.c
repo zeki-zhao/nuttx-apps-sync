@@ -4,7 +4,7 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
-#include <signal.h>
+#include "nsh_terminal.h"
 
 lv_obj_t * ui_HomeScreen = NULL;
 lv_obj_t * ui_ButtonTheme = NULL;
@@ -12,6 +12,7 @@ lv_obj_t * ui_btnToScreen1 = NULL;
 lv_obj_t * ui_btnToScreen2 = NULL;
 lv_obj_t * ui_btnToScreen3 = NULL;
 
+lv_obj_t * ui_btnToScreen4 = NULL;
 lv_obj_t * ui_btnExitApp = NULL;
 
 static bool ui_theme_dark = false;
@@ -36,8 +37,8 @@ void ui_event_ButtonTheme(lv_event_t * e)
         }
 
         lv_obj_set_style_bg_color(ui_HomeScreen, bg, LV_PART_MAIN);
-        lv_obj_set_style_bg_color(ui_Screen1, bg, LV_PART_MAIN);
-        lv_obj_set_style_bg_color(ui_Screen2, bg, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(ui_DeviceCtrl, bg, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(ui_ModbusSlave, bg, LV_PART_MAIN);
         lv_obj_set_style_bg_color(ui_Screen3, bg, LV_PART_MAIN);
     }
 }
@@ -47,7 +48,7 @@ void ui_event_btnToScreen1(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if (event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen1, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Screen1_screen_init);
+        _ui_screen_change(&ui_DeviceCtrl, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_DeviceCtrl_screen_init);
     }
 }
 
@@ -56,7 +57,7 @@ void ui_event_btnToScreen2(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if (event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen2, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Screen2_screen_init);
+        _ui_screen_change(&ui_ModbusSlave, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ModbusSlave_screen_init);
     }
 }
 
@@ -69,12 +70,12 @@ void ui_event_btnToScreen3(lv_event_t * e)
     }
 }
 
-void ui_event_btnExitApp(lv_event_t * e)
+void ui_event_btnToScreen4(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if (event_code == LV_EVENT_CLICKED) {
-        raise(SIGINT);
+        _ui_screen_change(&ui_FileExplorer, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_FileExplorer_screen_init);
     }
 }
 
@@ -111,19 +112,6 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_radius(ui_ButtonTheme, 8, LV_PART_MAIN);
     add_label_to_btn(ui_ButtonTheme, "Switch Theme");
 
-    // Exit button (circular, top-right)
-    ui_btnExitApp = lv_button_create(ui_HomeScreen);
-    lv_obj_set_width(ui_btnExitApp, 44);
-    lv_obj_set_height(ui_btnExitApp, 44);
-    lv_obj_align(ui_btnExitApp, LV_ALIGN_TOP_RIGHT, -10, 10);
-    lv_obj_set_style_radius(ui_btnExitApp, 22, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(ui_btnExitApp, lv_color_hex(0xE05050), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_btnExitApp, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_btnExitApp, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-    lv_obj_t * exit_label = lv_label_create(ui_btnExitApp);
-    lv_label_set_text(exit_label, "✕");
-    lv_obj_center(exit_label);
-
     // Navigation buttons
     ui_btnToScreen1 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen1, 160);
@@ -132,7 +120,7 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_bg_color(ui_btnToScreen1, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen1, 10, LV_PART_MAIN);
-    add_label_to_btn(ui_btnToScreen1, "Screen 1");
+    add_label_to_btn(ui_btnToScreen1, "Device Ctrl");
 
     ui_btnToScreen2 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen2, 160);
@@ -141,7 +129,7 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_bg_color(ui_btnToScreen2, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen2, 10, LV_PART_MAIN);
-    add_label_to_btn(ui_btnToScreen2, "Screen 2");
+    add_label_to_btn(ui_btnToScreen2, "Modbus Slave");
 
     ui_btnToScreen3 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen3, 160);
@@ -152,12 +140,23 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_radius(ui_btnToScreen3, 10, LV_PART_MAIN);
     add_label_to_btn(ui_btnToScreen3, "Screen 3");
 
+    // File Browser button
+    ui_btnToScreen4 = lv_button_create(ui_HomeScreen);
+    lv_obj_set_width(ui_btnToScreen4, 160);
+    lv_obj_set_height(ui_btnToScreen4, 60);
+    lv_obj_align(ui_btnToScreen4, LV_ALIGN_CENTER, 0, 160);
+    lv_obj_set_style_bg_color(ui_btnToScreen4, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_btnToScreen4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_btnToScreen4, 10, LV_PART_MAIN);
+    add_label_to_btn(ui_btnToScreen4, "File Browser");
+
     // Register events
     lv_obj_add_event_cb(ui_ButtonTheme, ui_event_ButtonTheme, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen1, ui_event_btnToScreen1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen2, ui_event_btnToScreen2, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen3, ui_event_btnToScreen3, LV_EVENT_ALL, NULL);
-    lv_obj_add_event_cb(ui_btnExitApp, ui_event_btnExitApp, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_btnToScreen4, ui_event_btnToScreen4, LV_EVENT_ALL, NULL);
+    nsh_terminal_toggle_btn_create(ui_HomeScreen);
 }
 
 void ui_HomeScreen_screen_destroy(void)
@@ -169,5 +168,5 @@ void ui_HomeScreen_screen_destroy(void)
     ui_btnToScreen1 = NULL;
     ui_btnToScreen2 = NULL;
     ui_btnToScreen3 = NULL;
-    ui_btnExitApp = NULL;
+    ui_btnToScreen4 = NULL;
 }

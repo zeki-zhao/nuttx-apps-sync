@@ -10,7 +10,7 @@
 #include <time.h>
 
 #include "ui/ui.h"
-#include "ui/screens/ui_Screen2.h"
+#include "ui/screens/ui_ModbusSlave.h"
 #include "lvgl_event.h"
 #include "led_handler.h"
 #include "sd_handler.h"
@@ -115,8 +115,6 @@ int main(int argc, FAR char *argv[])
 
     ui_init();
     ui_Terminal_screen_init();
-    ui_Terminal_homebutton_create(ui_HomeScreen);
-
     restore_modbus_slave_config();
 
     nsh_terminal_init();

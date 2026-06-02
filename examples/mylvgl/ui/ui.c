@@ -31,16 +31,18 @@ void ui_init(void)
                                                false, LV_FONT_DEFAULT);
     lv_disp_set_theme(dispp, theme);
     ui_HomeScreen_screen_init();
-    ui_Screen1_screen_init();
-    ui_Screen2_screen_init();
+    ui_DeviceCtrl_screen_init();
+    ui_ModbusSlave_screen_init();
     ui_Screen3_screen_init();
+    ui_FileExplorer_screen_init();
     ui____initial_actions0 = lv_obj_create(NULL);
 
     lv_color_t white = lv_color_hex(0xFFFFFF);
     lv_obj_set_style_bg_color(ui_HomeScreen, white, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(ui_Screen1, white, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(ui_Screen2, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_DeviceCtrl, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_ModbusSlave, white, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_Screen3, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_FileExplorer, white, LV_PART_MAIN);
 
     lv_disp_load_scr(ui_HomeScreen);
 }
@@ -48,7 +50,8 @@ void ui_init(void)
 void ui_destroy(void)
 {
     ui_HomeScreen_screen_destroy();
-    ui_Screen1_screen_destroy();
-    ui_Screen2_screen_destroy();
+    ui_DeviceCtrl_screen_destroy();
+    ui_ModbusSlave_screen_destroy();
     ui_Screen3_screen_destroy();
+    ui_FileExplorer_screen_destroy();
 }

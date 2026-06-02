@@ -5,13 +5,14 @@
 
 #include "../ui.h"
 #include "led_handler.h"
+#include "nsh_terminal.h"
 
-lv_obj_t * ui_Screen1 = NULL;
+lv_obj_t * ui_DeviceCtrl = NULL;
 lv_obj_t * ui_Switch1 = NULL;
 lv_obj_t * ui_Switch2 = NULL;
 lv_obj_t * ui_Switch3 = NULL;
 lv_obj_t * ui_Button1 = NULL;
-static lv_timer_t * ui_Screen1_sync_timer = NULL;
+static lv_timer_t * ui_DeviceCtrl_sync_timer = NULL;
 
 // event funtions
 void ui_event_Switch1(lv_event_t * e)
@@ -52,31 +53,31 @@ void ui_event_Button1(lv_event_t * e)
 
 // build funtions
 
-static void ui_Screen1_sync_cb(lv_timer_t * t)
+static void ui_DeviceCtrl_sync_cb(lv_timer_t * t)
 {
     led_sync_all();
 }
 
-void ui_Screen1_screen_init(void)
+void ui_DeviceCtrl_screen_init(void)
 {
-    ui_Screen1 = lv_obj_create(NULL);
-    lv_obj_remove_flag(ui_Screen1, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    ui_DeviceCtrl = lv_obj_create(NULL);
+    lv_obj_remove_flag(ui_DeviceCtrl, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_Switch1 = lv_switch_create(ui_Screen1);
+    ui_Switch1 = lv_switch_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Switch1, 70);
     lv_obj_set_height(ui_Switch1, 35);
     lv_obj_set_x(ui_Switch1, -234);
     lv_obj_set_y(ui_Switch1, -164);
     lv_obj_set_align(ui_Switch1, LV_ALIGN_CENTER);
 
-    ui_Switch2 = lv_switch_create(ui_Screen1);
+    ui_Switch2 = lv_switch_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Switch2, 70);
     lv_obj_set_height(ui_Switch2, 35);
     lv_obj_set_x(ui_Switch2, -234);
     lv_obj_set_y(ui_Switch2, -94);
     lv_obj_set_align(ui_Switch2, LV_ALIGN_CENTER);
 
-    ui_Switch3 = lv_switch_create(ui_Screen1);
+    ui_Switch3 = lv_switch_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Switch3, 70);
     lv_obj_set_height(ui_Switch3, 35);
     lv_obj_set_x(ui_Switch3, -232);
@@ -84,7 +85,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_align(ui_Switch3, LV_ALIGN_CENTER);
 
     // Home button
-    ui_Button1 = lv_button_create(ui_Screen1);
+    ui_Button1 = lv_button_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Button1, 90);
     lv_obj_set_height(ui_Button1, 40);
     lv_obj_align(ui_Button1, LV_ALIGN_TOP_LEFT, 10, 10);
@@ -103,21 +104,23 @@ void ui_Screen1_screen_init(void)
     led_state_init();
     led_sync_all();
 
-    ui_Screen1_sync_timer = lv_timer_create(ui_Screen1_sync_cb, 500, NULL);
+    ui_DeviceCtrl_sync_timer = lv_timer_create(ui_DeviceCtrl_sync_cb, 500, NULL);
+
+    nsh_terminal_toggle_btn_create(ui_DeviceCtrl);
 }
 
-void ui_Screen1_screen_destroy(void)
+void ui_DeviceCtrl_screen_destroy(void)
 {
-    if (ui_Screen1_sync_timer)
+    if (ui_DeviceCtrl_sync_timer)
     {
-        lv_timer_del(ui_Screen1_sync_timer);
-        ui_Screen1_sync_timer = NULL;
+        lv_timer_del(ui_DeviceCtrl_sync_timer);
+        ui_DeviceCtrl_sync_timer = NULL;
     }
 
-    if(ui_Screen1) lv_obj_del(ui_Screen1);
+    if(ui_DeviceCtrl) lv_obj_del(ui_DeviceCtrl);
 
     // NULL screen variables
-    ui_Screen1 = NULL;
+    ui_DeviceCtrl = NULL;
     ui_Switch1 = NULL;
     ui_Switch2 = NULL;
     ui_Switch3 = NULL;

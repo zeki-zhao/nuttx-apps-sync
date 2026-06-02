@@ -4,6 +4,9 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
+#include "nsh_terminal.h"
+#include "sd_handler.h"
+#include <stdlib.h>
 
 lv_obj_t * ui_Screen3 = NULL;
 lv_obj_t * ui_TextArea3 = NULL;
@@ -40,6 +43,16 @@ void ui_event_Button7(lv_event_t * e)
 }
 
 // build funtions
+
+static void screen3_load_cb(lv_event_t *e)
+{
+    char *saved = load_text_from_sd();
+    if (saved)
+    {
+        lv_textarea_set_text(ui_TextArea3, saved);
+        free(saved);
+    }
+}
 
 void ui_Screen3_screen_init(void)
 {
@@ -93,6 +106,11 @@ void ui_Screen3_screen_init(void)
     lv_obj_add_event_cb(ui_ButtonHome3, ui_event_ButtonHome3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_TextArea3, ui_event_TextArea3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Button7, ui_event_Button7, LV_EVENT_ALL, NULL);
+
+    /* Reload content each time screen becomes visible */
+    lv_obj_add_event_cb(ui_Screen3, screen3_load_cb, LV_EVENT_SCREEN_LOADED, NULL);
+
+    nsh_terminal_toggle_btn_create(ui_Screen3);
 }
 
 void ui_Screen3_screen_destroy(void)

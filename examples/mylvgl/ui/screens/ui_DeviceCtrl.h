@@ -3,17 +3,17 @@
 // LVGL version: 9.2.2
 // Project name: SquareLine_Project
 
-#ifndef UI_SCREEN1_H
-#define UI_SCREEN1_H
+#ifndef UI_DEVICECTRL_H
+#define UI_DEVICECTRL_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// SCREEN: ui_Screen1
-extern void ui_Screen1_screen_init(void);
-extern void ui_Screen1_screen_destroy(void);
-extern lv_obj_t * ui_Screen1;
+// SCREEN: ui_DeviceCtrl
+extern void ui_DeviceCtrl_screen_init(void);
+extern void ui_DeviceCtrl_screen_destroy(void);
+extern lv_obj_t * ui_DeviceCtrl;
 extern void ui_event_Switch1(lv_event_t * e);
 extern lv_obj_t * ui_Switch1;
 extern void ui_event_Switch2(lv_event_t * e);

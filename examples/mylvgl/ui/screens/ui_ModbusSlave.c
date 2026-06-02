@@ -8,8 +8,9 @@
 #include "lvgl_event.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "nsh_terminal.h"
 
-lv_obj_t * ui_Screen2 = NULL;
+lv_obj_t * ui_ModbusSlave = NULL;
 lv_obj_t * ui_TextArea1 = NULL;
 lv_obj_t * ui_TextArea2 = NULL;
 lv_obj_t * ui_Dropdown1 = NULL;
@@ -75,17 +76,17 @@ void ui_event_Dropdown1(lv_event_t * e)
 
 static int s_table_start_addr = 0;
 static int s_table_num_rows = 0;
-static int s_reg_type = 0; // 仅 confirm 时更新，timer 只读此值
+static int s_reg_type = 0; // only updated on confirm, timer is read-only
 
 static void ui_Table1_timer_cb(lv_timer_t * timer)
 {
-    int reg_type = s_reg_type; // 仅读取 confirm 时固定的值
+    int reg_type = s_reg_type;
     const char *reg_name = (reg_type == 0) ? "InputReg" : "HoldingReg";
 
     lv_table_set_row_cnt(ui_Table1, s_table_num_rows + 2);
 
     char buf[MODBUS_VALUE_STR_MAX];
-    // Title row — centered across both columns
+    // Title row -- centered across both columns
     snprintf(buf, sizeof(buf), "-- %s --", reg_name);
     lv_table_set_cell_value(ui_Table1, 0, 0, buf);
     lv_table_add_cell_ctrl(ui_Table1, 0, 0, LV_TABLE_CELL_CTRL_MERGE_RIGHT);
@@ -141,13 +142,13 @@ void ui_event_ButtonConfirm1(lv_event_t * e)
     }
 }
 
-void ui_Screen2_screen_init(void)
+void ui_ModbusSlave_screen_init(void)
 {
-    ui_Screen2 = lv_obj_create(NULL);
-    lv_obj_remove_flag(ui_Screen2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    ui_ModbusSlave = lv_obj_create(NULL);
+    lv_obj_remove_flag(ui_ModbusSlave, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
     // Home button
-    ui_ButtonHome2 = lv_button_create(ui_Screen2);
+    ui_ButtonHome2 = lv_button_create(ui_ModbusSlave);
     lv_obj_set_width(ui_ButtonHome2, 90);
     lv_obj_set_height(ui_ButtonHome2, 40);
     lv_obj_align(ui_ButtonHome2, LV_ALIGN_TOP_LEFT, 10, 10);
@@ -158,7 +159,7 @@ void ui_Screen2_screen_init(void)
     lv_label_set_text(label, "⌂ Home");
     lv_obj_center(label);
 
-    ui_TextArea1 = lv_textarea_create(ui_Screen2);
+    ui_TextArea1 = lv_textarea_create(ui_ModbusSlave);
     lv_obj_set_width(ui_TextArea1, 150);
     lv_obj_set_height(ui_TextArea1, 48);
     lv_obj_set_x(ui_TextArea1, 264);
@@ -167,7 +168,7 @@ void ui_Screen2_screen_init(void)
     lv_textarea_set_accepted_chars(ui_TextArea1, "1234567890");
     lv_textarea_set_placeholder_text(ui_TextArea1, "RegAddr");
 
-    ui_TextArea2 = lv_textarea_create(ui_Screen2);
+    ui_TextArea2 = lv_textarea_create(ui_ModbusSlave);
     lv_obj_set_width(ui_TextArea2, 150);
     lv_obj_set_height(ui_TextArea2, 48);
     lv_obj_set_x(ui_TextArea2, 263);
@@ -177,7 +178,7 @@ void ui_Screen2_screen_init(void)
     lv_textarea_set_placeholder_text(ui_TextArea2, "RegNum");
 
     // Confirm button to apply address/row-count settings
-    ui_Dropdown1 = lv_dropdown_create(ui_Screen2);
+    ui_Dropdown1 = lv_dropdown_create(ui_ModbusSlave);
     lv_dropdown_set_options(ui_Dropdown1, "InputReg\nHoldingReg");
     lv_obj_set_width(ui_Dropdown1, 150);
     lv_obj_set_height(ui_Dropdown1, LV_SIZE_CONTENT);    /// 1
@@ -185,7 +186,7 @@ void ui_Screen2_screen_init(void)
     lv_obj_set_y(ui_Dropdown1, -55);
     lv_obj_set_align(ui_Dropdown1, LV_ALIGN_CENTER);
 
-    ui_ButtonConfirm1 = lv_button_create(ui_Screen2);
+    ui_ButtonConfirm1 = lv_button_create(ui_ModbusSlave);
     lv_obj_set_width(ui_ButtonConfirm1, 150);
     lv_obj_set_height(ui_ButtonConfirm1, 40);
     lv_obj_set_x(ui_ButtonConfirm1, 265);
@@ -198,7 +199,7 @@ void ui_Screen2_screen_init(void)
     lv_label_set_text(confirm_label, "Confirm");
     lv_obj_center(confirm_label);
 
-    ui_Keyboard1 = lv_keyboard_create(ui_Screen2);
+    ui_Keyboard1 = lv_keyboard_create(ui_ModbusSlave);
     lv_keyboard_set_mode(ui_Keyboard1, LV_KEYBOARD_MODE_NUMBER);
     lv_obj_set_width(ui_Keyboard1, 260);
     lv_obj_set_height(ui_Keyboard1, 160);
@@ -207,14 +208,14 @@ void ui_Screen2_screen_init(void)
     lv_obj_set_align(ui_Keyboard1, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
 
-    ui_Table1 = lv_table_create(ui_Screen2);
+    ui_Table1 = lv_table_create(ui_ModbusSlave);
     lv_obj_set_width(ui_Table1, 520);
     lv_obj_set_height(ui_Table1, 460);
     lv_obj_align(ui_Table1, LV_ALIGN_LEFT_MID, 5, 0);
     lv_obj_set_style_border_width(ui_Table1, 1, LV_PART_MAIN);
     lv_obj_set_style_border_color(ui_Table1, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
 
-    // Set column count and widths (Address, Value — no Unit column)
+    // Set column count and widths (Address, Value -- no Unit column)
     lv_table_set_col_cnt(ui_Table1, 2);
     lv_table_set_column_width(ui_Table1, 0, 180);
     lv_table_set_column_width(ui_Table1, 1, 320);
@@ -241,14 +242,16 @@ void ui_Screen2_screen_init(void)
     lv_obj_add_event_cb(ui_Dropdown1, ui_event_Dropdown1, LV_EVENT_ALL, NULL);
 
     lv_timer_create(ui_Table1_timer_cb, 500, NULL);
+
+    nsh_terminal_toggle_btn_create(ui_ModbusSlave);
 }
 
-void ui_Screen2_screen_destroy(void)
+void ui_ModbusSlave_screen_destroy(void)
 {
-    if(ui_Screen2) lv_obj_del(ui_Screen2);
+    if(ui_ModbusSlave) lv_obj_del(ui_ModbusSlave);
 
     // NULL screen variables
-    ui_Screen2 = NULL;
+    ui_ModbusSlave = NULL;
     ui_TextArea1 = NULL;
     ui_TextArea2 = NULL;
     ui_Dropdown1 = NULL;

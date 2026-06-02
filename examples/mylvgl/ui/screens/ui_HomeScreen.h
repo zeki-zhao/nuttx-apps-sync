@@ -22,8 +22,8 @@ extern void ui_event_btnToScreen2(lv_event_t * e);
 extern lv_obj_t * ui_btnToScreen2;
 extern void ui_event_btnToScreen3(lv_event_t * e);
 extern lv_obj_t * ui_btnToScreen3;
-extern void ui_event_btnExitApp(lv_event_t * e);
-extern lv_obj_t * ui_btnExitApp;
+extern void ui_event_btnToScreen4(lv_event_t * e);
+extern lv_obj_t * ui_btnToScreen4;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

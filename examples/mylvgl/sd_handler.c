@@ -73,6 +73,40 @@ int lvgl_event_send_modbus_slave_config(int start_addr, int num_rows, int reg_ty
     return mq_send(lvgl_mqd, (const char *)&msg, sizeof(msg), 0);
 }
 
+char *load_text_from_sd(void)
+{
+    char path[128];
+    snprintf(path, sizeof(path), SD_LOG_DIR "/" SD_SAVE_FILE);
+
+    FILE *fp = fopen(path, "r");
+    if (!fp)
+        return NULL;
+
+    /* Get file size */
+    fseek(fp, 0, SEEK_END);
+    long fsize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if (fsize <= 0)
+    {
+        fclose(fp);
+        return NULL;
+    }
+
+    char *buf = malloc(fsize + 1);
+    if (!buf)
+    {
+        fclose(fp);
+        return NULL;
+    }
+
+    size_t nread = fread(buf, 1, fsize, fp);
+    fclose(fp);
+    buf[nread] = '\0';
+
+    return buf;
+}
+
 int lvgl_event_send_text(const char *text)
 {
     mqd_t lvgl_mqd = lvgl_event_get_mqd(LVGL_EVENT_MQ_NAME);

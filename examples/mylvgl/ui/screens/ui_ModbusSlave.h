@@ -3,17 +3,17 @@
 // LVGL version: 9.2.2
 // Project name: SquareLine_Project
 
-#ifndef UI_SCREEN2_H
-#define UI_SCREEN2_H
+#ifndef UI_MODBUSSLAVE_H
+#define UI_MODBUSSLAVE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// SCREEN: ui_Screen2
-extern void ui_Screen2_screen_init(void);
-extern void ui_Screen2_screen_destroy(void);
-extern lv_obj_t * ui_Screen2;
+// SCREEN: ui_ModbusSlave
+extern void ui_ModbusSlave_screen_init(void);
+extern void ui_ModbusSlave_screen_destroy(void);
+extern lv_obj_t * ui_ModbusSlave;
 extern void ui_event_TextArea1(lv_event_t * e);
 extern lv_obj_t * ui_TextArea1;
 extern void ui_event_TextArea2(lv_event_t * e);
