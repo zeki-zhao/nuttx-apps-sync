@@ -13,6 +13,7 @@ lv_obj_t * ui_btnToScreen2 = NULL;
 lv_obj_t * ui_btnToScreen3 = NULL;
 
 lv_obj_t * ui_btnToScreen4 = NULL;
+lv_obj_t * ui_btnToScreen5 = NULL;
 lv_obj_t * ui_btnExitApp = NULL;
 
 static bool ui_theme_dark = false;
@@ -39,7 +40,9 @@ void ui_event_ButtonTheme(lv_event_t * e)
         lv_obj_set_style_bg_color(ui_HomeScreen, bg, LV_PART_MAIN);
         lv_obj_set_style_bg_color(ui_DeviceCtrl, bg, LV_PART_MAIN);
         lv_obj_set_style_bg_color(ui_ModbusSlave, bg, LV_PART_MAIN);
-        lv_obj_set_style_bg_color(ui_Screen3, bg, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(ui_FileEdit, bg, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(ui_FileExplorer, bg, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(ui_MusicPlayer, bg, LV_PART_MAIN);
     }
 }
 
@@ -66,7 +69,7 @@ void ui_event_btnToScreen3(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if (event_code == LV_EVENT_CLICKED) {
-        _ui_screen_change(&ui_Screen3, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Screen3_screen_init);
+        _ui_screen_change(&ui_FileEdit, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_FileEdit_screen_init);
     }
 }
 
@@ -76,6 +79,15 @@ void ui_event_btnToScreen4(lv_event_t * e)
 
     if (event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_FileExplorer, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_FileExplorer_screen_init);
+    }
+}
+
+void ui_event_btnToScreen5(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if (event_code == LV_EVENT_CLICKED) {
+        _ui_screen_change(&ui_MusicPlayer, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_MusicPlayer_screen_init);
     }
 }
 
@@ -115,8 +127,8 @@ void ui_HomeScreen_screen_init(void)
     // Navigation buttons
     ui_btnToScreen1 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen1, 160);
-    lv_obj_set_height(ui_btnToScreen1, 60); 
-    lv_obj_align(ui_btnToScreen1, LV_ALIGN_CENTER, 0, -80);
+    lv_obj_set_height(ui_btnToScreen1, 60);
+    lv_obj_align(ui_btnToScreen1, LV_ALIGN_CENTER, 0, -100);
     lv_obj_set_style_bg_color(ui_btnToScreen1, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen1, 10, LV_PART_MAIN);
@@ -125,7 +137,7 @@ void ui_HomeScreen_screen_init(void)
     ui_btnToScreen2 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen2, 160);
     lv_obj_set_height(ui_btnToScreen2, 60);
-    lv_obj_align(ui_btnToScreen2, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_align(ui_btnToScreen2, LV_ALIGN_CENTER, 0, -50);
     lv_obj_set_style_bg_color(ui_btnToScreen2, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen2, 10, LV_PART_MAIN);
@@ -134,21 +146,31 @@ void ui_HomeScreen_screen_init(void)
     ui_btnToScreen3 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen3, 160);
     lv_obj_set_height(ui_btnToScreen3, 60);
-    lv_obj_align(ui_btnToScreen3, LV_ALIGN_CENTER, 0, 80);
+    lv_obj_align(ui_btnToScreen3, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_bg_color(ui_btnToScreen3, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen3, 10, LV_PART_MAIN);
-    add_label_to_btn(ui_btnToScreen3, "Screen 3");
+    add_label_to_btn(ui_btnToScreen3, "File Edit");
 
     // File Browser button
     ui_btnToScreen4 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen4, 160);
     lv_obj_set_height(ui_btnToScreen4, 60);
-    lv_obj_align(ui_btnToScreen4, LV_ALIGN_CENTER, 0, 160);
+    lv_obj_align(ui_btnToScreen4, LV_ALIGN_CENTER, 0, 50);
     lv_obj_set_style_bg_color(ui_btnToScreen4, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen4, 10, LV_PART_MAIN);
     add_label_to_btn(ui_btnToScreen4, "File Browser");
+
+    // Music Player button
+    ui_btnToScreen5 = lv_button_create(ui_HomeScreen);
+    lv_obj_set_width(ui_btnToScreen5, 160);
+    lv_obj_set_height(ui_btnToScreen5, 60);
+    lv_obj_align(ui_btnToScreen5, LV_ALIGN_CENTER, 0, 100);
+    lv_obj_set_style_bg_color(ui_btnToScreen5, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_btnToScreen5, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_btnToScreen5, 10, LV_PART_MAIN);
+    add_label_to_btn(ui_btnToScreen5, "Music Player");
 
     // Register events
     lv_obj_add_event_cb(ui_ButtonTheme, ui_event_ButtonTheme, LV_EVENT_ALL, NULL);
@@ -156,6 +178,7 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_add_event_cb(ui_btnToScreen2, ui_event_btnToScreen2, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen3, ui_event_btnToScreen3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen4, ui_event_btnToScreen4, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_btnToScreen5, ui_event_btnToScreen5, LV_EVENT_ALL, NULL);
     nsh_terminal_toggle_btn_create(ui_HomeScreen);
 }
 
@@ -169,4 +192,5 @@ void ui_HomeScreen_screen_destroy(void)
     ui_btnToScreen2 = NULL;
     ui_btnToScreen3 = NULL;
     ui_btnToScreen4 = NULL;
+    ui_btnToScreen5 = NULL;
 }

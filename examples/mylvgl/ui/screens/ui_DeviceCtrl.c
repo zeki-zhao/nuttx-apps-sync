@@ -6,6 +6,7 @@
 #include "../ui.h"
 #include "led_handler.h"
 #include "nsh_terminal.h"
+#include "buzzer.h"
 
 lv_obj_t * ui_DeviceCtrl = NULL;
 lv_obj_t * ui_Switch1 = NULL;
@@ -52,6 +53,18 @@ void ui_event_Button1(lv_event_t * e)
 }
 
 // build funtions
+
+static void piano_press_cb(lv_event_t *e)
+{
+    note_name_t note = (note_name_t)(uintptr_t)lv_event_get_user_data(e);
+    buzzer_on(note);
+}
+
+static void piano_release_cb(lv_event_t *e)
+{
+    note_name_t note = (note_name_t)(uintptr_t)lv_event_get_user_data(e);
+    buzzer_off(note);
+}
 
 static void ui_DeviceCtrl_sync_cb(lv_timer_t * t)
 {
@@ -106,6 +119,32 @@ void ui_DeviceCtrl_screen_init(void)
 
     ui_DeviceCtrl_sync_timer = lv_timer_create(ui_DeviceCtrl_sync_cb, 500, NULL);
 
+    /* Piano keys */
+    buzzer_init();
+
+    static const char *note_names[] = {"Do", "Re", "Mi", "Fa", "Sol", "La", "Ti"};
+    const int key_w = 60;
+    const int key_h = 100;
+    const int gap  = 8;
+
+    for (int i = 0; i < 7; i++)
+    {
+        lv_obj_t *key = lv_button_create(ui_DeviceCtrl);
+        lv_obj_set_size(key, key_w, key_h);
+        lv_obj_align(key, LV_ALIGN_BOTTOM_LEFT, 8 + i * (key_w + gap), -10);
+        lv_obj_set_style_radius(key, 4, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(key, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+        lv_obj_set_style_border_width(key, 1, LV_PART_MAIN);
+        lv_obj_set_style_border_color(key, lv_color_hex(0x333333), LV_PART_MAIN);
+
+        lv_obj_t *lbl = lv_label_create(key);
+        lv_label_set_text(lbl, note_names[i]);
+        lv_obj_center(lbl);
+
+        lv_obj_add_event_cb(key, piano_press_cb, LV_EVENT_PRESSED, (void *)(uintptr_t)i);
+        lv_obj_add_event_cb(key, piano_release_cb, LV_EVENT_RELEASED, (void *)(uintptr_t)i);
+    }
+
     nsh_terminal_toggle_btn_create(ui_DeviceCtrl);
 }
 
@@ -118,6 +157,8 @@ void ui_DeviceCtrl_screen_destroy(void)
     }
 
     if(ui_DeviceCtrl) lv_obj_del(ui_DeviceCtrl);
+
+    buzzer_deinit();
 
     // NULL screen variables
     ui_DeviceCtrl = NULL;

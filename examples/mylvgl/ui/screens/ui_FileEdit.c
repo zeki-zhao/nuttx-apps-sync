@@ -8,7 +8,7 @@
 #include "sd_handler.h"
 #include <stdlib.h>
 
-lv_obj_t * ui_Screen3 = NULL;
+lv_obj_t * ui_FileEdit = NULL;
 lv_obj_t * ui_TextArea3 = NULL;
 lv_obj_t * ui_Keyboard2 = NULL;
 lv_obj_t * ui_Button7 = NULL;
@@ -54,13 +54,13 @@ static void screen3_load_cb(lv_event_t *e)
     }
 }
 
-void ui_Screen3_screen_init(void)
+void ui_FileEdit_screen_init(void)
 {
-    ui_Screen3 = lv_obj_create(NULL);
-    lv_obj_remove_flag(ui_Screen3, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    ui_FileEdit = lv_obj_create(NULL);
+    lv_obj_remove_flag(ui_FileEdit, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
     // Home button
-    ui_ButtonHome3 = lv_button_create(ui_Screen3);
+    ui_ButtonHome3 = lv_button_create(ui_FileEdit);
     lv_obj_set_width(ui_ButtonHome3, 90);
     lv_obj_set_height(ui_ButtonHome3, 40);
     lv_obj_align(ui_ButtonHome3, LV_ALIGN_TOP_LEFT, 10, 10);
@@ -71,7 +71,7 @@ void ui_Screen3_screen_init(void)
     lv_label_set_text(label, "⌂ Home");
     lv_obj_center(label);
 
-    ui_TextArea3 = lv_textarea_create(ui_Screen3);
+    ui_TextArea3 = lv_textarea_create(ui_FileEdit);
     lv_obj_set_width(ui_TextArea3, 363);
     lv_obj_set_height(ui_TextArea3, 140);
     lv_obj_set_x(ui_TextArea3, -149);
@@ -79,14 +79,14 @@ void ui_Screen3_screen_init(void)
     lv_obj_set_align(ui_TextArea3, LV_ALIGN_CENTER);
     lv_textarea_set_placeholder_text(ui_TextArea3, "Input word...");
 
-    ui_Keyboard2 = lv_keyboard_create(ui_Screen3);
+    ui_Keyboard2 = lv_keyboard_create(ui_FileEdit);
     lv_obj_set_width(ui_Keyboard2, 555);
     lv_obj_set_height(ui_Keyboard2, 120);
     lv_obj_set_x(ui_Keyboard2, -63);
     lv_obj_set_y(ui_Keyboard2, 60);
     lv_obj_set_align(ui_Keyboard2, LV_ALIGN_CENTER);
 
-    ui_Button7 = lv_button_create(ui_Screen3);
+    ui_Button7 = lv_button_create(ui_FileEdit);
     lv_obj_set_width(ui_Button7, 100);
     lv_obj_set_height(ui_Button7, 50);
     lv_obj_set_x(ui_Button7, 305);
@@ -108,17 +108,17 @@ void ui_Screen3_screen_init(void)
     lv_obj_add_event_cb(ui_Button7, ui_event_Button7, LV_EVENT_ALL, NULL);
 
     /* Reload content each time screen becomes visible */
-    lv_obj_add_event_cb(ui_Screen3, screen3_load_cb, LV_EVENT_SCREEN_LOADED, NULL);
+    lv_obj_add_event_cb(ui_FileEdit, screen3_load_cb, LV_EVENT_SCREEN_LOADED, NULL);
 
-    nsh_terminal_toggle_btn_create(ui_Screen3);
+    nsh_terminal_toggle_btn_create(ui_FileEdit);
 }
 
-void ui_Screen3_screen_destroy(void)
+void ui_FileEdit_screen_destroy(void)
 {
-    if(ui_Screen3) lv_obj_del(ui_Screen3);
+    if(ui_FileEdit) lv_obj_del(ui_FileEdit);
 
     // NULL screen variables
-    ui_Screen3 = NULL;
+    ui_FileEdit = NULL;
     ui_TextArea3 = NULL;
     ui_Keyboard2 = NULL;
     ui_Button7 = NULL;

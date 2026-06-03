@@ -19,9 +19,10 @@ extern "C" {
 #include "screens/ui_HomeScreen.h"
 #include "screens/ui_DeviceCtrl.h"
 #include "screens/ui_ModbusSlave.h"
-#include "screens/ui_Screen3.h"
+#include "screens/ui_FileEdit.h"
 #include "screens/ui_Terminal.h"
 #include "screens/ui_FileExplorer.h"
+#include "screens/ui_MusicPlayer.h"
 
 ///////////////////// VARIABLES ////////////////////
 

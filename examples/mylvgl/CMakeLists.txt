@@ -34,6 +34,7 @@ if(CONFIG_EXAMPLES_MY_LVGL)
     DEPENDS
     lvgl
     ui
+    upf
     SRCS
     mylvgl.c
     lvgl_event.c
@@ -43,6 +44,7 @@ if(CONFIG_EXAMPLES_MY_LVGL)
     modbus_slave_instance.c
     ParameterInfo.c
     nsh_terminal.c
+    buzzer.c
     INCLUDE_DIRECTORIES
     .
     ui)
