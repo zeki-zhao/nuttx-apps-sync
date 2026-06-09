@@ -140,7 +140,7 @@ int main(int argc, FAR char *argv[])
     lvgl_evt_register(LVGL_MSG_SAVE_LED_STATUS, save_led_status_handler);
     lvgl_evt_register(LVGL_MSG_SAVE_TEXT, save_text_handler);
     lvgl_evt_register(LVGL_MSG_SAVE_MODBUS_SLAVE_CONFIG, save_modbus_slave_show_config_hander);
-    
+    lvgl_evt_register(LVGL_MSG_UPGRADE, move_sd_firmware_to_flash);
 
     pthread_t LvglEvent; /* lvgl消息队列处理线程 */
     pthread_create(&LvglEvent, NULL, LvglEventProcess, (void *)(intptr_t)mqd);

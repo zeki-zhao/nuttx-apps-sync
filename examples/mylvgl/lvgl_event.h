@@ -14,6 +14,7 @@
 #define LVGL_MSG_SAVE_LED_STATUS   3
 #define LVGL_MSG_SAVE_TEXT   2
 #define LVGL_MSG_SAVE_MODBUS_SLAVE_CONFIG   4
+#define LVGL_MSG_UPGRADE   5
 
 
 struct lvgl_msg_s
@@ -43,6 +44,7 @@ void lvgl_evt_unregister(long type);
 int lvgl_event_send_set_led(uint8_t led_num, bool on);
 int lvgl_event_send_text(const char *text);
 int lvgl_event_send_modbus_slave_config(int start_addr, int num_rows, int reg_type);
+int lvgl_event_send_upgrade(void);
 mqd_t lvgl_event_get_mqd(const char *name);
 pthread_addr_t LvglEventProcess(pthread_addr_t arg);
 

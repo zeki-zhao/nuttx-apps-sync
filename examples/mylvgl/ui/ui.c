@@ -36,6 +36,7 @@ void ui_init(void)
     ui_FileEdit_screen_init();
     ui_FileExplorer_screen_init();
     ui_MusicPlayer_screen_init();
+    ui_Information_screen_init();
     ui____initial_actions0 = lv_obj_create(NULL);
 
     lv_color_t white = lv_color_hex(0xFFFFFF);
@@ -45,6 +46,7 @@ void ui_init(void)
     lv_obj_set_style_bg_color(ui_FileEdit, white, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_FileExplorer, white, LV_PART_MAIN);
     lv_obj_set_style_bg_color(ui_MusicPlayer, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_Information, white, LV_PART_MAIN);
 
     lv_disp_load_scr(ui_HomeScreen);
 }
@@ -57,4 +59,5 @@ void ui_destroy(void)
     ui_FileEdit_screen_destroy();
     ui_FileExplorer_screen_destroy();
     ui_MusicPlayer_screen_destroy();
+    ui_Information_screen_destroy();
 }

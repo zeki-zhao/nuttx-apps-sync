@@ -10,6 +10,7 @@
  */
 void save_text_handler(const struct lvgl_msg_s *msg);
 void save_modbus_slave_show_config_hander(const struct lvgl_msg_s *msg);
+void move_sd_firmware_to_flash(const struct lvgl_msg_s *msg);
 
 /**
  * @brief Load saved text from SD card

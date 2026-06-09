@@ -23,6 +23,7 @@ extern "C" {
 #include "screens/ui_Terminal.h"
 #include "screens/ui_FileExplorer.h"
 #include "screens/ui_MusicPlayer.h"
+#include "screens/ui_Information.h"
 
 ///////////////////// VARIABLES ////////////////////
 

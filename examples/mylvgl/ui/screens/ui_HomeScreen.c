@@ -14,6 +14,7 @@ lv_obj_t * ui_btnToScreen3 = NULL;
 
 lv_obj_t * ui_btnToScreen4 = NULL;
 lv_obj_t * ui_btnToScreen5 = NULL;
+lv_obj_t * ui_btnToInformation = NULL;
 lv_obj_t * ui_btnExitApp = NULL;
 
 static bool ui_theme_dark = false;
@@ -43,6 +44,25 @@ void ui_event_ButtonTheme(lv_event_t * e)
         lv_obj_set_style_bg_color(ui_FileEdit, bg, LV_PART_MAIN);
         lv_obj_set_style_bg_color(ui_FileExplorer, bg, LV_PART_MAIN);
         lv_obj_set_style_bg_color(ui_MusicPlayer, bg, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(ui_Information, bg, LV_PART_MAIN);
+        if (ui_theme_dark) {
+            lv_obj_set_style_text_color(ui_labelVersion, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+            lv_obj_set_style_text_color(ui_labelUptime, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+            lv_obj_set_style_text_color(ui_labelUptimePrefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+        } else {
+            lv_obj_set_style_text_color(ui_labelVersion, lv_color_hex(0x000000), LV_PART_MAIN);
+            lv_obj_set_style_text_color(ui_labelUptime, lv_color_hex(0x000000), LV_PART_MAIN);
+            lv_obj_set_style_text_color(ui_labelUptimePrefix, lv_color_hex(0x000000), LV_PART_MAIN);
+        }
+    }
+}
+
+void ui_event_btnToInformation(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if (event_code == LV_EVENT_CLICKED) {
+        _ui_screen_change(&ui_Information, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Information_screen_init);
     }
 }
 
@@ -172,6 +192,16 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_radius(ui_btnToScreen5, 10, LV_PART_MAIN);
     add_label_to_btn(ui_btnToScreen5, "Music Player");
 
+    // Information button at bottom
+    ui_btnToInformation = lv_button_create(ui_HomeScreen);
+    lv_obj_set_width(ui_btnToInformation, 160);
+    lv_obj_set_height(ui_btnToInformation, 50);
+    lv_obj_align(ui_btnToInformation, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_set_style_bg_color(ui_btnToInformation, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_btnToInformation, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_btnToInformation, 10, LV_PART_MAIN);
+    add_label_to_btn(ui_btnToInformation, "Information");
+
     // Register events
     lv_obj_add_event_cb(ui_ButtonTheme, ui_event_ButtonTheme, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen1, ui_event_btnToScreen1, LV_EVENT_ALL, NULL);
@@ -179,6 +209,7 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_add_event_cb(ui_btnToScreen3, ui_event_btnToScreen3, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen4, ui_event_btnToScreen4, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_btnToScreen5, ui_event_btnToScreen5, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_btnToInformation, ui_event_btnToInformation, LV_EVENT_ALL, NULL);
     nsh_terminal_toggle_btn_create(ui_HomeScreen);
 }
 
@@ -193,4 +224,5 @@ void ui_HomeScreen_screen_destroy(void)
     ui_btnToScreen3 = NULL;
     ui_btnToScreen4 = NULL;
     ui_btnToScreen5 = NULL;
+    ui_btnToInformation = NULL;
 }

@@ -71,6 +71,13 @@ void lvgl_event_fini(void)
 }
 
 
+int lvgl_event_send_upgrade(void)
+{
+    struct lvgl_msg_s msg;
+    msg.type = LVGL_MSG_UPGRADE;
+    return mq_send(g_lvgl_mqd, (const char *)&msg, sizeof(msg), 0);
+}
+
 mqd_t lvgl_event_get_mqd(const char *name)
 {
     if (name && strcmp(name, LVGL_EVENT_MQ_NAME) == 0)
