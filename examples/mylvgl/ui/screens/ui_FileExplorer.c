@@ -4,13 +4,14 @@
 #include "nsh_terminal.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <arch/board/board_paths.h>
 
 #define MAX_ENTRIES    128
 #define ENTRY_NAME_MAX 64
-#define CONTENT_MAX    1024
+#define CONTENT_MAX   2048
 
 lv_obj_t *ui_FileExplorer = NULL;
 
@@ -92,11 +93,39 @@ static void file_click_cb(lv_event_t *e)
         return;
     }
 
-    char content[CONTENT_MAX + 1];
+    char *content = malloc(CONTENT_MAX + 64);
+    if (!content)
+    {
+        lv_textarea_set_text(ui_labelContent, "Out of memory.");
+        fclose(fp);
+        return;
+    }
+
     size_t nread = fread(content, 1, CONTENT_MAX, fp);
+
+    /* Detect if file is larger than CONTENT_MAX */
+    bool truncated = false;
+    if (nread == CONTENT_MAX)
+    {
+        char one_more;
+        if (fread(&one_more, 1, 1, fp) > 0)
+            truncated = true;
+    }
+
     fclose(fp);
-    content[nread] = '\0';
+
+    if (truncated)
+    {
+        snprintf(content + nread, CONTENT_MAX + 64 - nread,
+                 "\n\n... (truncated at %d bytes)", CONTENT_MAX);
+    }
+    else
+    {
+        content[nread] = '\0';
+    }
     lv_textarea_set_text(ui_labelContent, content);
+    lv_obj_scroll_to_y(ui_labelContent, 0, LV_ANIM_OFF);
+    free(content);
 }
 
 /****************************************************************************
@@ -222,7 +251,7 @@ void ui_FileExplorer_screen_init(void)
                               LV_PART_MAIN);
     lv_obj_set_style_radius(ui_btnHome, 6, LV_PART_MAIN);
     lv_obj_t *home_lbl = lv_label_create(ui_btnHome);
-    lv_label_set_text(home_lbl, "⌂ Home");
+    lv_label_set_text(home_lbl, "Home");
     lv_obj_center(home_lbl);
     lv_obj_add_event_cb(ui_btnHome, home_click_cb, LV_EVENT_CLICKED, NULL);
 

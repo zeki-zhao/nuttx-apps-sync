@@ -323,7 +323,7 @@ void ui_MusicPlayer_screen_init(void)
                               LV_PART_MAIN);
     lv_obj_set_style_radius(btn_home, 8, LV_PART_MAIN);
     lv_obj_t *lbl_home = lv_label_create(btn_home);
-    lv_label_set_text(lbl_home, "⌂ Home");
+    lv_label_set_text(lbl_home, "Home");
     lv_obj_center(lbl_home);
     lv_obj_add_event_cb(btn_home, home_click_cb, LV_EVENT_CLICKED, NULL);
 

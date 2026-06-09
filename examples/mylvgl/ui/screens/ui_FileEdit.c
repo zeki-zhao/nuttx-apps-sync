@@ -68,7 +68,7 @@ void ui_FileEdit_screen_init(void)
     lv_obj_set_style_bg_opa(ui_ButtonHome3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_ButtonHome3, 8, LV_PART_MAIN);
     lv_obj_t * label = lv_label_create(ui_ButtonHome3);
-    lv_label_set_text(label, "⌂ Home");
+    lv_label_set_text(label, "Home");
     lv_obj_center(label);
 
     ui_TextArea3 = lv_textarea_create(ui_FileEdit);

@@ -18,6 +18,13 @@ lv_obj_t * ui_Keyboard1 = NULL;
 lv_obj_t * ui_Table1 = NULL;
 lv_obj_t * ui_ButtonHome2 = NULL;
 lv_obj_t * ui_ButtonConfirm1 = NULL;
+static lv_obj_t *ui_TableTitle = NULL;
+
+/* Forward declarations used by event callbacks */
+static int s_table_start_addr;
+static int s_table_num_rows = MODBUS_REG_COUNT;
+static int s_reg_type;
+
 // event funtions
 void ui_event_ButtonHome2(lv_event_t * e)
 {
@@ -63,52 +70,42 @@ void ui_event_Keyboard1(lv_event_t * e)
     }
 }
 
+static void ui_Table1_timer_cb(lv_timer_t * timer)
+{
+    if (lv_scr_act() != ui_ModbusSlave)
+        return;
+
+    int reg_type = s_reg_type;
+
+    char buf[MODBUS_VALUE_STR_MAX];
+    for (int i = 0; i < s_table_num_rows; i++)
+    {
+        int reg = s_table_start_addr + i;
+
+        snprintf(buf, sizeof(buf), "0x%04X", s_table_start_addr + i);
+        lv_table_set_cell_value(ui_Table1, i, 0, buf);
+
+        uint16_t val = modbus_slave_read_reg(reg_type, reg);
+        snprintf(buf, sizeof(buf), "%d", val);
+        lv_table_set_cell_value(ui_Table1, i, 1, buf);
+    }
+
+    lv_obj_invalidate(ui_Table1);
+}
+
 void ui_event_Dropdown1(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_VALUE_CHANGED) {
         lv_obj_set_style_text_color(ui_Dropdown1, lv_color_hex(0x999999), LV_PART_MAIN);
+        /* Update title immediately, but actual data waits for Confirm */
+        // int sel = lv_dropdown_get_selected(ui_Dropdown1);
+        // const char *name = (sel == 0) ? "InputReg" : "HoldingReg";
+        // char buf[48];
+        // snprintf(buf, sizeof(buf), "--- %s ---", name);
+        // lv_label_set_text(ui_TableTitle, buf);
     }
-}
-
-// build funtions
-
-static int s_table_start_addr = 0;
-static int s_table_num_rows = 0;
-static int s_reg_type = 0; // only updated on confirm, timer is read-only
-
-static void ui_Table1_timer_cb(lv_timer_t * timer)
-{
-    int reg_type = s_reg_type;
-    const char *reg_name = (reg_type == 0) ? "InputReg" : "HoldingReg";
-
-    lv_table_set_row_cnt(ui_Table1, s_table_num_rows + 2);
-
-    char buf[MODBUS_VALUE_STR_MAX];
-    // Title row -- centered across both columns
-    snprintf(buf, sizeof(buf), "-- %s --", reg_name);
-    lv_table_set_cell_value(ui_Table1, 0, 0, buf);
-    lv_table_add_cell_ctrl(ui_Table1, 0, 0, LV_TABLE_CELL_CTRL_MERGE_RIGHT);
-
-    // Column headers
-    lv_table_set_cell_value(ui_Table1, 1, 0, "Address");
-    lv_table_set_cell_value(ui_Table1, 1, 1, "Value");
-
-    for (int i = 0; i < s_table_num_rows; i++)
-    {
-        int reg = s_table_start_addr + i;
-        int row = i + 2;
-
-        snprintf(buf, sizeof(buf), "0x%04X", s_table_start_addr + i);
-        lv_table_set_cell_value(ui_Table1, row, 0, buf);
-
-        uint16_t val = modbus_slave_read_reg(reg_type, reg);
-        snprintf(buf, sizeof(buf), "%d", val);
-        lv_table_set_cell_value(ui_Table1, row, 1, buf);
-    }
-
-    lv_obj_invalidate(ui_Table1);
 }
 
 void ui_event_ButtonConfirm1(lv_event_t * e)
@@ -116,24 +113,7 @@ void ui_event_ButtonConfirm1(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        s_reg_type = lv_dropdown_get_selected(ui_Dropdown1);
-        const char *addr_text = lv_textarea_get_text(ui_TextArea1);
-        s_table_start_addr = 0;
-        if (addr_text && addr_text[0] != '\0')
-            s_table_start_addr = strtol(addr_text, NULL, 16);
-
-        const char *num_text = lv_textarea_get_text(ui_TextArea2);
-        s_table_num_rows = 0;
-        if (num_text && num_text[0] != '\0')
-            s_table_num_rows = strtol(num_text, NULL, 10);
-
-        if (s_table_start_addr >= MODBUS_REG_ARRAY_SIZE)
-            s_table_num_rows = 0;
-        else if (s_table_num_rows > MODBUS_REG_ARRAY_SIZE - s_table_start_addr)
-            s_table_num_rows = MODBUS_REG_ARRAY_SIZE - s_table_start_addr;
-
-        lv_table_set_row_cnt(ui_Table1, s_table_num_rows + 2);
-        ui_Table1_timer_cb(NULL);
+        ui_ModbusSlave_apply_config();
 
         lv_obj_set_style_text_color(ui_Dropdown1, lv_color_hex(0x000000), LV_PART_MAIN);
 
@@ -141,6 +121,43 @@ void ui_event_ButtonConfirm1(lv_event_t * e)
                                              lv_dropdown_get_selected(ui_Dropdown1));
     }
 }
+
+/****************************************************************************
+ * Public: apply current control values to the table
+ ****************************************************************************/
+
+void ui_ModbusSlave_apply_config(void)
+{
+    s_reg_type = lv_dropdown_get_selected(ui_Dropdown1);
+    const char *reg_name = (s_reg_type == 0) ? "InputReg" : "HoldingReg";
+
+    /* Update fixed title label */
+    char title_buf[48];
+    snprintf(title_buf, sizeof(title_buf), "--- %s ---", reg_name);
+    lv_label_set_text(ui_TableTitle, title_buf);
+
+    const char *addr_text = lv_textarea_get_text(ui_TextArea1);
+    s_table_start_addr = 0;
+    if (addr_text && addr_text[0] != '\0')
+        s_table_start_addr = strtol(addr_text, NULL, 16);
+
+    const char *num_text = lv_textarea_get_text(ui_TextArea2);
+    s_table_num_rows = 0;
+    if (num_text && num_text[0] != '\0')
+        s_table_num_rows = strtol(num_text, NULL, 10);
+
+    if (s_table_start_addr >= MODBUS_REG_ARRAY_SIZE)
+        s_table_num_rows = 0;
+    else if (s_table_num_rows > MODBUS_REG_ARRAY_SIZE - s_table_start_addr)
+        s_table_num_rows = MODBUS_REG_ARRAY_SIZE - s_table_start_addr;
+
+    lv_table_set_row_cnt(ui_Table1, s_table_num_rows);
+    ui_Table1_timer_cb(NULL);
+}
+
+/****************************************************************************
+ * Screen init
+ ****************************************************************************/
 
 void ui_ModbusSlave_screen_init(void)
 {
@@ -152,18 +169,18 @@ void ui_ModbusSlave_screen_init(void)
     lv_obj_set_width(ui_ButtonHome2, 90);
     lv_obj_set_height(ui_ButtonHome2, 40);
     lv_obj_align(ui_ButtonHome2, LV_ALIGN_TOP_LEFT, 10, 10);
-    lv_obj_set_style_bg_color(ui_ButtonHome2, lv_color_hex(0x999999), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_ButtonHome2, 180, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_ButtonHome2, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_ButtonHome2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_ButtonHome2, 8, LV_PART_MAIN);
     lv_obj_t * label = lv_label_create(ui_ButtonHome2);
-    lv_label_set_text(label, "⌂ Home");
+    lv_label_set_text(label, "Home");
     lv_obj_center(label);
 
     ui_TextArea1 = lv_textarea_create(ui_ModbusSlave);
     lv_obj_set_width(ui_TextArea1, 150);
     lv_obj_set_height(ui_TextArea1, 48);
-    lv_obj_set_x(ui_TextArea1, 264);
-    lv_obj_set_y(ui_TextArea1, -178);
+    lv_obj_set_x(ui_TextArea1, -260);
+    lv_obj_set_y(ui_TextArea1, -158);
     lv_obj_set_align(ui_TextArea1, LV_ALIGN_CENTER);
     lv_textarea_set_accepted_chars(ui_TextArea1, "1234567890");
     lv_textarea_set_placeholder_text(ui_TextArea1, "RegAddr");
@@ -171,8 +188,8 @@ void ui_ModbusSlave_screen_init(void)
     ui_TextArea2 = lv_textarea_create(ui_ModbusSlave);
     lv_obj_set_width(ui_TextArea2, 150);
     lv_obj_set_height(ui_TextArea2, 48);
-    lv_obj_set_x(ui_TextArea2, 263);
-    lv_obj_set_y(ui_TextArea2, -110);
+    lv_obj_set_x(ui_TextArea2, -260);
+    lv_obj_set_y(ui_TextArea2, -90);
     lv_obj_set_align(ui_TextArea2, LV_ALIGN_CENTER);
     lv_textarea_set_accepted_chars(ui_TextArea2, "1234567890");
     lv_textarea_set_placeholder_text(ui_TextArea2, "RegNum");
@@ -182,17 +199,17 @@ void ui_ModbusSlave_screen_init(void)
     lv_dropdown_set_options(ui_Dropdown1, "InputReg\nHoldingReg");
     lv_obj_set_width(ui_Dropdown1, 150);
     lv_obj_set_height(ui_Dropdown1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Dropdown1, 265);
-    lv_obj_set_y(ui_Dropdown1, -55);
+    lv_obj_set_x(ui_Dropdown1, -260);
+    lv_obj_set_y(ui_Dropdown1, -35);
     lv_obj_set_align(ui_Dropdown1, LV_ALIGN_CENTER);
 
     ui_ButtonConfirm1 = lv_button_create(ui_ModbusSlave);
     lv_obj_set_width(ui_ButtonConfirm1, 150);
     lv_obj_set_height(ui_ButtonConfirm1, 40);
-    lv_obj_set_x(ui_ButtonConfirm1, 265);
-    lv_obj_set_y(ui_ButtonConfirm1, 0);
+    lv_obj_set_x(ui_ButtonConfirm1, -260);
+    lv_obj_set_y(ui_ButtonConfirm1, 20);
     lv_obj_set_align(ui_ButtonConfirm1, LV_ALIGN_CENTER);
-    lv_obj_set_style_bg_color(ui_ButtonConfirm1, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_ButtonConfirm1, lv_color_hex(0x78909C), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_ButtonConfirm1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_ButtonConfirm1, 8, LV_PART_MAIN);
     lv_obj_t * confirm_label = lv_label_create(ui_ButtonConfirm1);
@@ -203,34 +220,68 @@ void ui_ModbusSlave_screen_init(void)
     lv_keyboard_set_mode(ui_Keyboard1, LV_KEYBOARD_MODE_NUMBER);
     lv_obj_set_width(ui_Keyboard1, 260);
     lv_obj_set_height(ui_Keyboard1, 160);
-    lv_obj_set_x(ui_Keyboard1, 260);
-    lv_obj_set_y(ui_Keyboard1, 115);
+    lv_obj_set_x(ui_Keyboard1, -260);
+    lv_obj_set_y(ui_Keyboard1, 135);
     lv_obj_set_align(ui_Keyboard1, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_Keyboard1, LV_OBJ_FLAG_HIDDEN);
 
+    /* Fixed header: title row + column headers (not scrollable) */
+    lv_obj_t *hdr = lv_obj_create(ui_ModbusSlave);
+    lv_obj_set_size(hdr, 520, 46);
+    lv_obj_align(hdr, LV_ALIGN_TOP_RIGHT, -5, 10);
+    lv_obj_set_style_border_width(hdr, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(hdr, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(hdr, lv_color_hex(0x78909C), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(hdr, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(hdr, 0, LV_PART_MAIN);
+    lv_obj_remove_flag(hdr, LV_OBJ_FLAG_SCROLLABLE);
+
+    ui_TableTitle = lv_label_create(hdr);
+    lv_label_set_text(ui_TableTitle, "--- InputReg ---");
+    lv_obj_set_size(ui_TableTitle, 520, 23);
+    lv_obj_set_style_bg_color(ui_TableTitle, lv_color_hex(0x78909C), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(ui_TableTitle, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ui_TableTitle, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_set_style_text_align(ui_TableTitle, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(ui_TableTitle, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    lv_obj_t *hdr_addr = lv_label_create(hdr);
+    lv_label_set_text(hdr_addr, "Address");
+    lv_obj_set_size(hdr_addr, 180, 23);
+    lv_obj_set_style_bg_color(hdr_addr, lv_color_hex(0x78909C), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(hdr_addr, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_text_color(hdr_addr, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_set_style_text_align(hdr_addr, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(hdr_addr, LV_ALIGN_TOP_LEFT, 0, 23);
+
+    lv_obj_t *hdr_val = lv_label_create(hdr);
+    lv_label_set_text(hdr_val, "Value");
+    lv_obj_set_size(hdr_val, 340, 23);
+    lv_obj_set_style_bg_color(hdr_val, lv_color_hex(0x78909C), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(hdr_val, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_text_color(hdr_val, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_set_style_text_align(hdr_val, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(hdr_val, LV_ALIGN_TOP_LEFT, 180, 23);
+
+    /* Scrollable data table (data rows only) */
     ui_Table1 = lv_table_create(ui_ModbusSlave);
     lv_obj_set_width(ui_Table1, 520);
-    lv_obj_set_height(ui_Table1, 460);
-    lv_obj_align(ui_Table1, LV_ALIGN_LEFT_MID, 5, 0);
+    lv_obj_set_height(ui_Table1, 414);
+    lv_obj_align(ui_Table1, LV_ALIGN_TOP_RIGHT, -5, 58);
     lv_obj_set_style_border_width(ui_Table1, 1, LV_PART_MAIN);
     lv_obj_set_style_border_color(ui_Table1, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
 
-    // Set column count and widths (Address, Value -- no Unit column)
     lv_table_set_col_cnt(ui_Table1, 2);
     lv_table_set_column_width(ui_Table1, 0, 180);
-    lv_table_set_column_width(ui_Table1, 1, 320);
+    lv_table_set_column_width(ui_Table1, 1, 340);
 
-    // Initial title row (merged), header row; data rows filled by timer
-    lv_table_set_row_cnt(ui_Table1, 2);
-    lv_table_set_cell_value(ui_Table1, 0, 0, "--- InputReg ---");
-    lv_table_add_cell_ctrl(ui_Table1, 0, 0, LV_TABLE_CELL_CTRL_MERGE_RIGHT);
-
-    lv_table_set_cell_value(ui_Table1, 1, 0, "Address");
-    lv_table_set_cell_value(ui_Table1, 1, 1, "Value");
-
-    lv_obj_set_style_bg_color(ui_Table1, lv_color_hex(0x3AACB7), LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_Table1, lv_color_hex(0x78909C), LV_PART_ITEMS | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui_Table1, lv_color_hex(0xFFFFFF), LV_PART_ITEMS | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui_Table1, LV_TEXT_ALIGN_CENTER, LV_PART_ITEMS);
+
+    /* Only vertical scroll, no elastic pull at edges, no horizontal drag */
+    lv_obj_set_scroll_dir(ui_Table1, LV_DIR_VER);
+    lv_obj_remove_flag(ui_Table1, LV_OBJ_FLAG_SCROLL_ELASTIC);
 
     lv_obj_move_foreground(ui_ButtonHome2);
 
@@ -241,7 +292,10 @@ void ui_ModbusSlave_screen_init(void)
     lv_obj_add_event_cb(ui_Keyboard1, ui_event_Keyboard1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Dropdown1, ui_event_Dropdown1, LV_EVENT_ALL, NULL);
 
-    lv_timer_create(ui_Table1_timer_cb, 500, NULL);
+    lv_timer_create(ui_Table1_timer_cb, 1000, NULL);
+
+    /* Populate table immediately with current config */
+    ui_Table1_timer_cb(NULL);
 
     nsh_terminal_toggle_btn_create(ui_ModbusSlave);
 }

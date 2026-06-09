@@ -106,7 +106,7 @@ void ui_DeviceCtrl_screen_init(void)
     lv_obj_set_style_bg_opa(ui_Button1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_Button1, 8, LV_PART_MAIN);
     lv_obj_t * label = lv_label_create(ui_Button1);
-    lv_label_set_text(label, "⌂ Home");
+    lv_label_set_text(label, "Home");
     lv_obj_center(label);
 
     lv_obj_add_event_cb(ui_Switch1, ui_event_Switch1, LV_EVENT_ALL, NULL);

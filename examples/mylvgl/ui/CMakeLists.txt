@@ -5,6 +5,7 @@ SET(SOURCES screens/ui_HomeScreen.c
     screens/ui_Terminal.c
     screens/ui_FileExplorer.c
     screens/ui_MusicPlayer.c
+    screens/ui_Information.c
     ui.c
     ui_helpers.c
     ui_events.c)

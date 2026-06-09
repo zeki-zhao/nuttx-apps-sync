@@ -13,6 +13,7 @@ extern "C" {
 // SCREEN: ui_ModbusSlave
 extern void ui_ModbusSlave_screen_init(void);
 extern void ui_ModbusSlave_screen_destroy(void);
+extern void ui_ModbusSlave_apply_config(void);
 extern lv_obj_t * ui_ModbusSlave;
 extern void ui_event_TextArea1(lv_event_t * e);
 extern lv_obj_t * ui_TextArea1;

@@ -88,6 +88,9 @@ static void restore_modbus_slave_config(void)
     }
 
     fclose(fp);
+
+    /* Apply restored config to the table */
+    ui_ModbusSlave_apply_config();
 }
 
 int main(int argc, FAR char *argv[])
