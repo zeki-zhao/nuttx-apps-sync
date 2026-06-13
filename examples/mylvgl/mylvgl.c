@@ -138,6 +138,10 @@ int main(int argc, FAR char *argv[])
         goto error;
     }
 
+    ret = nxboot_confirm();
+    if (ret < 0)
+        printf("nxboot_confirm FAILED: %d\n", ret);
+
     lvgl_evt_register(LVGL_MSG_SET_LED, set_led_handler);
     lvgl_evt_register(LVGL_MSG_SAVE_LED_STATUS, save_led_status_handler);
     lvgl_evt_register(LVGL_MSG_SAVE_TEXT, save_text_handler);
