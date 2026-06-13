@@ -128,6 +128,8 @@ struct nxboot_state
 {
   int update;                         /* Number of update slot */
   int recovery;                       /* Number of recovery slot */
+  bool primary_valid;                 /* True if primary image is CRC-valid */
+  bool update_valid;                  /* True if update image is CRC-valid */
   bool recovery_valid;                /* True if recovery image contains valid recovery */
   bool recovery_present;              /* True if the image in primary has a recovery */
   bool primary_confirmed;             /* True if primary slot is confirmed */
@@ -279,5 +281,20 @@ int nxboot_perform_update(bool check_only);
  ****************************************************************************/
 
 int nxboot_ramcopy(void);
+
+/****************************************************************************
+ * Name: board_indicate
+ *
+ * Description:
+ *   Weak function called by nxboot_progress() to allow board-specific
+ *   indication of bootloader state (LED, buzzer, etc.).
+ *   Override in board code.
+ *
+ *   msg: a progress_msg_e value indicating the current operation,
+ *        or -1 on progress_end (operation complete).
+ *
+ ****************************************************************************/
+
+void board_indicate(int msg);
 
 #endif /* __BOOT_NXBOOT_INCLUDE_NXBOOT_H */
