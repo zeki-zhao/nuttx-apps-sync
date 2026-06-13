@@ -54,7 +54,7 @@ class NxImage:
             "<NxImage\n"
             f"  path:        {self.path}\n"
             f"  result:      {self.result}\n"
-            f"  fsize:       {self.size}\n"
+            f"  img_size:    {self.size + self.header_size}\n"
             f"  version:     {self.version}\n"
             f"  header_size: {self.header_size:x}\n"
             f"  identifier:  {self.identifier:x}\n"
