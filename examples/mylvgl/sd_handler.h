@@ -3,6 +3,9 @@
 
 #include "lvgl_event.h"
 
+
+extern volatile bool g_upgrade_busy;
+
 /**
  * @brief Save-text event handler
  * register with lvgl_evt_register()

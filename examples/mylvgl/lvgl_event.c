@@ -71,10 +71,11 @@ void lvgl_event_fini(void)
 }
 
 
-int lvgl_event_send_upgrade(void)
+int lvgl_event_send_upgrade(int slot)
 {
     struct lvgl_msg_s msg;
     msg.type = LVGL_MSG_UPGRADE;
+    msg.slot = slot;
     return mq_send(g_lvgl_mqd, (const char *)&msg, sizeof(msg), 0);
 }
 

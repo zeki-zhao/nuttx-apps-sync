@@ -70,11 +70,8 @@ void ui_event_Keyboard1(lv_event_t * e)
     }
 }
 
-static void ui_Table1_timer_cb(lv_timer_t * timer)
+static void ui_Table1_refresh_data(void)
 {
-    if (lv_scr_act() != ui_ModbusSlave)
-        return;
-
     int reg_type = s_reg_type;
 
     char buf[MODBUS_VALUE_STR_MAX];
@@ -93,18 +90,20 @@ static void ui_Table1_timer_cb(lv_timer_t * timer)
     lv_obj_invalidate(ui_Table1);
 }
 
+static void ui_Table1_timer_cb(lv_timer_t * timer)
+{
+    if (lv_scr_act() != ui_ModbusSlave)
+        return;
+
+    ui_Table1_refresh_data();
+}
+
 void ui_event_Dropdown1(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_VALUE_CHANGED) {
         lv_obj_set_style_text_color(ui_Dropdown1, lv_color_hex(0x999999), LV_PART_MAIN);
-        /* Update title immediately, but actual data waits for Confirm */
-        // int sel = lv_dropdown_get_selected(ui_Dropdown1);
-        // const char *name = (sel == 0) ? "InputReg" : "HoldingReg";
-        // char buf[48];
-        // snprintf(buf, sizeof(buf), "--- %s ---", name);
-        // lv_label_set_text(ui_TableTitle, buf);
     }
 }
 
@@ -152,7 +151,7 @@ void ui_ModbusSlave_apply_config(void)
         s_table_num_rows = MODBUS_REG_ARRAY_SIZE - s_table_start_addr;
 
     lv_table_set_row_cnt(ui_Table1, s_table_num_rows);
-    ui_Table1_timer_cb(NULL);
+    ui_Table1_refresh_data();
 }
 
 /****************************************************************************
@@ -295,7 +294,7 @@ void ui_ModbusSlave_screen_init(void)
     lv_timer_create(ui_Table1_timer_cb, 1000, NULL);
 
     /* Populate table immediately with current config */
-    ui_Table1_timer_cb(NULL);
+    ui_Table1_refresh_data();
 
     nsh_terminal_toggle_btn_create(ui_ModbusSlave);
 }

@@ -17,6 +17,7 @@
 #include "modbus_slave.h"
 #include "nsh_terminal.h"
 #include "netutils/cJSON.h"
+#include <nxboot.h>
 #include <arch/board/board_paths.h>
 
 #undef NEED_BOARDINIT
@@ -95,6 +96,7 @@ static void restore_modbus_slave_config(void)
 
 int main(int argc, FAR char *argv[])
 {
+    int ret;
     lv_nuttx_dsc_t info;
     lv_nuttx_result_t result;
 

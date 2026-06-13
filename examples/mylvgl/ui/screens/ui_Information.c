@@ -7,6 +7,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+extern volatile bool g_upgrade_busy;
+
 #define UPDATE_DIR "/mnt/sd/firmware/update"
 
 lv_obj_t *ui_Information = NULL;
@@ -37,7 +39,8 @@ static void home_click_cb(lv_event_t *e)
 
 static void update_click_cb(lv_event_t *e)
 {
-    lvgl_event_send_upgrade();
+    g_upgrade_busy = true;
+    lvgl_event_send_upgrade(2);
 }
 
 /****************************************************************************
@@ -72,44 +75,33 @@ static void load_version_info(void)
 
 static void check_update_dir(lv_timer_t *timer)
 {
-    /* Only check when this screen is visible */
     if (lv_scr_act() != ui_Information)
         return;
 
-    bool found = false;
+    bool have_nuttx   = false;
     DIR *dir = opendir(UPDATE_DIR);
     if (dir)
     {
         struct dirent *entry;
         while ((entry = readdir(dir)) != NULL)
         {
-            size_t len = strlen(entry->d_name);
-            if (len > 4 && strcmp(entry->d_name + len - 4, ".bin") == 0)
-            {
-                found = true;
-                break;
-            }
+            if (strcmp(entry->d_name, "nuttx.img") == 0)
+                have_nuttx = true;
         }
         closedir(dir);
     }
 
-    if (found)
-    {
-        lv_obj_set_style_bg_color(ui_btnUpdate, lv_color_hex(0xFF8800),
-                                  LV_PART_MAIN);
-        lv_obj_add_flag(ui_btnUpdate, LV_OBJ_FLAG_CLICKABLE);
-    }
-    else
-    {
-        lv_obj_set_style_bg_color(ui_btnUpdate, lv_color_hex(0x999999),
-                                  LV_PART_MAIN);
-        lv_obj_remove_flag(ui_btnUpdate, LV_OBJ_FLAG_CLICKABLE);
-    }
-}
+    bool enable = have_nuttx && !g_upgrade_busy;
 
-/****************************************************************************
- * Timer: refresh uptime every 0.5s
- ****************************************************************************/
+    /* Update button */
+    lv_obj_set_style_bg_color(ui_btnUpdate,
+        enable ? lv_color_hex(0xFF8800) : lv_color_hex(0x999999),
+        LV_PART_MAIN);
+    if (enable)
+        lv_obj_add_flag(ui_btnUpdate, LV_OBJ_FLAG_CLICKABLE);
+    else
+        lv_obj_remove_flag(ui_btnUpdate, LV_OBJ_FLAG_CLICKABLE);
+}
 
 static void refresh_uptime(lv_timer_t *timer)
 {

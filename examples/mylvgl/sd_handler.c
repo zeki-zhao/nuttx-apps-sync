@@ -9,8 +9,10 @@
 #include "sd_handler.h"
 #include "lvgl_event.h"
 #include <arch/board/board_paths.h>
-#include <arch/board/board.h>
 #include <nuttx/mtd/mtd.h>
+#include <nuttx/fs/fs.h>
+
+volatile bool g_upgrade_busy = false;
 
 #define SD_SAVE_FILE  "lvgl_input.txt"
 
@@ -68,14 +70,23 @@ void move_sd_firmware_to_flash(const struct lvgl_msg_s *msg)
     struct mtd_geometry_s geo;
     off_t blk = 0;
     size_t total = 0;
-    // static uint8_t g_ota_buf[4096];
-
     uint8_t* g_ota_buf = malloc(4096);
 
-    printf("move firmware to flash\n");
-
+  
     char path[100];
-    snprintf(path, sizeof(path), SD_FIRMWARE_DIR "/update/nuttx.bin");
+    char IamgeDevPath[20];
+    switch (msg->slot)
+    {
+        case 2:
+            printf("move update firmware to flash\n");
+            snprintf(IamgeDevPath, sizeof(IamgeDevPath), CONFIG_NXBOOT_SECONDARY_SLOT_PATH);
+            snprintf(path, sizeof(path), SD_FIRMWARE_DIR "/update/nuttx.img");
+            break;
+
+        default:
+            printf("error slot\n");
+            return;
+    }
 
     fd = open(path, O_RDONLY);
     if (fd < 0)
@@ -83,23 +94,37 @@ void move_sd_firmware_to_flash(const struct lvgl_msg_s *msg)
         printf("can't open %s: %d\n", path, errno);
         return;
     }
+    FAR struct inode *mtd_inode;
+    int ret = find_mtddriver(IamgeDevPath, &mtd_inode);
+    if (ret < 0)
+    {
+        printf("FAILED to find secondary mtd driver: %d\n", ret);
+        close(fd);
+        free(g_ota_buf);
+        return;
+    }
+
+    FAR struct mtd_dev_s *mtd = mtd_inode->u.i_mtd;
 
     /* Get MTD geometry for block size */
-    if (g_mtd_secondary->ioctl(g_mtd_secondary, MTDIOC_GEOMETRY,
+    if (mtd->ioctl(mtd, MTDIOC_GEOMETRY,
                                 (unsigned long)(uintptr_t)&geo) < 0)
     {
         printf("FAILED to get MTD geometry\n");
+        close_mtddriver(mtd_inode);
         close(fd);
         return;
     }
 
     /* 擦除 Secondary */
-    if (g_mtd_secondary->ioctl(g_mtd_secondary, MTDIOC_BULKERASE, 0) < 0)
+    if (mtd->ioctl(mtd, MTDIOC_BULKERASE, 0) < 0)
     {
         printf("FAILED to erase Secondary\n");
+        close_mtddriver(mtd_inode);
         close(fd);
         return;
     }
+
     /* 重新读取并写入 Secondary */
     lseek(fd, 0, SEEK_SET);
     blk = 0;
@@ -107,23 +132,34 @@ void move_sd_firmware_to_flash(const struct lvgl_msg_s *msg)
 
     while ((nread = read(fd, g_ota_buf, 4096)) > 0)
     {
-        size_t nsectors = nread / geo.blocksize;
+        size_t nsectors = (nread + geo.blocksize - 1) / geo.blocksize;
+        size_t full_size = nsectors * geo.blocksize;
 
-        if (nsectors > 0)
+        /* NOR Flash 擦除态为 0xFF，填 0xFF 保持擦除态 */
+        if (nread < full_size)
+            memset(g_ota_buf + nread, 0xff, full_size - nread);
+
+        if (mtd->bwrite(mtd, blk, nsectors,
+                                    g_ota_buf) != nsectors)
         {
-            if (g_mtd_secondary->bwrite(g_mtd_secondary, blk, nsectors,
-                                        g_ota_buf) != nsectors)
-            {
-                printf("FAILED to write at block %ld\n", (long)blk);
-                close(fd);
-                free(g_ota_buf);
-                return;
-            }
-
-            blk += nsectors;
+            printf("FAILED to write at block %ld\n", (long)blk);
+            close_mtddriver(mtd_inode);
+            close(fd);
+            free(g_ota_buf);
+            return;
         }
+        blk += nsectors;
 
         total += nread;
+        // if(nread<4096)
+        // {
+        //     for (int i = 0; i < nread; i++)
+        //     {
+        //         printf("%02x ", g_ota_buf[i]);
+        //         if (i % 16 == 15)
+        //             printf("\n");
+        //     }
+        // }
         printf("\r  write %lu bytes to flash", (unsigned long)total);
         fflush(stdout);
     }
@@ -138,6 +174,7 @@ void move_sd_firmware_to_flash(const struct lvgl_msg_s *msg)
     if (!verify_buf)
     {
         printf("FAILED to alloc verify buffer\n");
+        close_mtddriver(mtd_inode);
         free(g_ota_buf);
         close(fd);
         return;
@@ -146,34 +183,35 @@ void move_sd_firmware_to_flash(const struct lvgl_msg_s *msg)
     printf("Verifying...\n");
     while ((nread = read(fd, g_ota_buf, 4096)) > 0)
     {
-        size_t nsectors = nread / geo.blocksize;
+        size_t nsectors = (nread + geo.blocksize - 1) / geo.blocksize;
 
-        if (nsectors > 0)
+        if (mtd->bread(mtd, blk, nsectors,
+                                   verify_buf) != nsectors)
         {
-            if (g_mtd_secondary->bread(g_mtd_secondary, blk, nsectors,
-                                       verify_buf) != nsectors)
-            {
-                printf("FAILED to read back at block %ld\n", (long)blk);
-                free(verify_buf);
-                free(g_ota_buf);
-                close(fd);
-                return;
-            }
-
-            if (memcmp(g_ota_buf, verify_buf, nsectors * geo.blocksize) != 0)
-            {
-                printf("VERIFY FAILED at block %ld\n", (long)blk);
-                free(verify_buf);
-                free(g_ota_buf);
-                close(fd);
-                return;
-            }
-
-            blk += nsectors;
+            printf("FAILED to read back at block %ld\n", (long)blk);
+            close_mtddriver(mtd_inode);
+            free(verify_buf);
+            free(g_ota_buf);
+            close(fd);
+            return;
         }
+
+        if (memcmp(g_ota_buf, verify_buf, nread) != 0)
+        {
+            printf("VERIFY FAILED at block %ld\n", (long)blk);
+            close_mtddriver(mtd_inode);
+            free(verify_buf);
+            free(g_ota_buf);
+            close(fd);
+            return;
+        }
+
+        blk += nsectors;
     }
 
     printf("Verify OK\n");
+    g_upgrade_busy = false;
+    close_mtddriver(mtd_inode);
     free(verify_buf);
     free(g_ota_buf);
     close(fd);

@@ -76,26 +76,22 @@ void ui_DeviceCtrl_screen_init(void)
     ui_DeviceCtrl = lv_obj_create(NULL);
     lv_obj_remove_flag(ui_DeviceCtrl, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
+    /* LED switches tiled horizontally */
+    int sw_y = -140;
     ui_Switch1 = lv_switch_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Switch1, 70);
     lv_obj_set_height(ui_Switch1, 35);
-    lv_obj_set_x(ui_Switch1, -234);
-    lv_obj_set_y(ui_Switch1, -164);
-    lv_obj_set_align(ui_Switch1, LV_ALIGN_CENTER);
+    lv_obj_align(ui_Switch1, LV_ALIGN_CENTER, -160, sw_y);
 
     ui_Switch2 = lv_switch_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Switch2, 70);
     lv_obj_set_height(ui_Switch2, 35);
-    lv_obj_set_x(ui_Switch2, -234);
-    lv_obj_set_y(ui_Switch2, -94);
-    lv_obj_set_align(ui_Switch2, LV_ALIGN_CENTER);
+    lv_obj_align(ui_Switch2, LV_ALIGN_CENTER, 0, sw_y);
 
     ui_Switch3 = lv_switch_create(ui_DeviceCtrl);
     lv_obj_set_width(ui_Switch3, 70);
     lv_obj_set_height(ui_Switch3, 35);
-    lv_obj_set_x(ui_Switch3, -232);
-    lv_obj_set_y(ui_Switch3, -24);
-    lv_obj_set_align(ui_Switch3, LV_ALIGN_CENTER);
+    lv_obj_align(ui_Switch3, LV_ALIGN_CENTER, 160, sw_y);
 
     // Home button
     ui_Button1 = lv_button_create(ui_DeviceCtrl);
@@ -126,12 +122,13 @@ void ui_DeviceCtrl_screen_init(void)
     const int key_w = 60;
     const int key_h = 100;
     const int gap  = 8;
+    const int total_w = 7 * key_w + 6 * gap;
 
     for (int i = 0; i < 7; i++)
     {
         lv_obj_t *key = lv_button_create(ui_DeviceCtrl);
         lv_obj_set_size(key, key_w, key_h);
-        lv_obj_align(key, LV_ALIGN_BOTTOM_LEFT, 8 + i * (key_w + gap), -10);
+        lv_obj_align(key, LV_ALIGN_BOTTOM_MID, -total_w / 2 + i * (key_w + gap), -10);
         lv_obj_set_style_radius(key, 4, LV_PART_MAIN);
         lv_obj_set_style_bg_color(key, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
         lv_obj_set_style_border_width(key, 1, LV_PART_MAIN);

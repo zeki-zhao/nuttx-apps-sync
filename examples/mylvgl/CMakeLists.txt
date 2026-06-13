@@ -35,6 +35,7 @@ if(CONFIG_EXAMPLES_MY_LVGL)
     lvgl
     ui
     upf
+    nxboot
     SRCS
     mylvgl.c
     lvgl_event.c
