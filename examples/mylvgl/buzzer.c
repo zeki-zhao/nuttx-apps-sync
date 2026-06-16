@@ -4,12 +4,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include "buzzer.h"
-
-/* Note names for piano UI */
-static const char * const g_note_names[NOTE_COUNT] = {
-    "Do", "Re", "Mi", "Fa", "Sol", "La", "Si"
-};
 
 /* Half-period lookup for piano UI (maps enum to value, C5 octave @1MHz) */
 static const int g_half_period_us[NOTE_COUNT] = {
@@ -62,16 +58,11 @@ void buzzer_on(note_name_t note)
     /* Stop music playback on manual key press */
     g_music_playing = false;
     board_buzzer_start(g_half_period_us[note]);
-
-    printf("buzzer: %s on (%d us)\n", g_note_names[note],
-           g_half_period_us[note]);
 }
 
 void buzzer_off(note_name_t note)
 {
     board_buzzer_stop();
-
-    printf("buzzer: %s off\n", g_note_names[note]);
 }
 
 /* === Music player thread === */
@@ -163,7 +154,7 @@ buzzer_note_t *buzzer_load_music(const char *filepath, size_t *count)
     FILE *f = fopen(filepath, "r");
     if (!f)
     {
-        printf("buzzer: can't open %s\n", filepath);
+        syslog(LOG_NOTICE,"buzzer: can't open %s\n", filepath);
         return NULL;
     }
 
@@ -186,7 +177,7 @@ buzzer_note_t *buzzer_load_music(const char *filepath, size_t *count)
     if (n == 0)
     {
         fclose(f);
-        printf("buzzer: no notes in %s\n", filepath);
+        syslog(LOG_NOTICE,"buzzer: no notes in %s\n", filepath);
         return NULL;
     }
 
@@ -215,7 +206,7 @@ buzzer_note_t *buzzer_load_music(const char *filepath, size_t *count)
         int hp = board_note_to_hp(note);
         if (hp < 0)
         {
-            printf("buzzer: skip unknown note '%s'\n", note);
+            syslog(LOG_NOTICE,"buzzer: skip unknown note '%s'\n", note);
             continue;
         }
         notes[i].half_period_us = (uint16_t)hp;

@@ -53,7 +53,7 @@ static void *modbus_timer_thread(void *arg)
 static void restore_modbus_slave_config(void)
 {
     char path[128];
-    snprintf(path, sizeof(path), SD_CONFIG_DIR "/modbus_slave_show_config.json");
+    snprintf(path, sizeof(path), SPI_FLASH_CONFIG_DIR "/modbus_slave_show_status.json");
 
     FILE *fp = fopen(path, "r");
     if (!fp)
@@ -82,7 +82,6 @@ static void restore_modbus_slave_config(void)
                 lv_textarea_set_text(ui_TextArea2, buf);
                 lv_dropdown_set_selected(ui_Dropdown1, type->valueint);
             }
-
             cJSON_Delete(root);
         }
         free(content);
@@ -148,8 +147,14 @@ int main(int argc, FAR char *argv[])
     lvgl_evt_register(LVGL_MSG_SAVE_MODBUS_SLAVE_CONFIG, save_modbus_slave_show_config_hander);
     lvgl_evt_register(LVGL_MSG_UPGRADE, move_sd_firmware_to_flash);
 
+    pthread_attr_t evt_attr;
+    pthread_attr_init(&evt_attr);
+    pthread_attr_setstacksize(&evt_attr, 4096);
+
     pthread_t LvglEvent; /* lvgl消息队列处理线程 */
-    pthread_create(&LvglEvent, NULL, LvglEventProcess, (void *)(intptr_t)mqd);
+    pthread_create(&LvglEvent, &evt_attr, LvglEventProcess, (void *)(intptr_t)mqd);
+
+    pthread_attr_destroy(&evt_attr);
 
     pthread_t ModbusThread; /* modbus数据模拟线程 */
     pthread_create(&ModbusThread, NULL, modbus_data_thread, NULL);

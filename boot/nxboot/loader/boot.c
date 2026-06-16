@@ -248,7 +248,6 @@ static bool validate_image(int fd)
       return false;
     }
 
-  syslog(LOG_INFO, "Validating image.\n");
   uint32_t crc;
 
   crc = calculate_crc(fd, &header);

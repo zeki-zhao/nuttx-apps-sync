@@ -159,6 +159,7 @@ static void term_timer_callback(lv_timer_t *timer)
   int ret;
   static char buf[64];
   bool new_output = false;
+  bool active = (lv_scr_act() == ui_Terminal);
 
   if (has_input(g_nsh_stdout[READ_PIPE]))
     {
@@ -188,83 +189,88 @@ static void term_timer_callback(lv_timer_t *timer)
 
   trim_textarea(ui_TerminalOutput);
 
-  /* Only scroll to bottom when new output was actually added,
-   * otherwise the user's manual scroll-up would be overridden. */
+  /* UI updates (scroll + keyboard) only when terminal is the active screen */
 
-  if (new_output)
+  if (active)
     {
-      term_scroll_bottom(ui_TerminalOutput);
-    }
+      /* Only scroll to bottom when new output was actually added,
+       * otherwise the user's manual scroll-up would be overridden. */
 
-  /* Retry opening keyboard device if not yet available (deferred probe) */
-
-  if (g_kbd_fd < 0)
-    {
-      g_kbd_fd = open(CONFIG_EXAMPLES_MY_LVGL_KBD_DEVPATH, O_RDONLY);
-      if (g_kbd_fd >= 0)
+      if (new_output)
         {
-          _warn("Keyboard device %s opened (deferred)\n",
-                CONFIG_EXAMPLES_MY_LVGL_KBD_DEVPATH);
-        }
-    }
-
-  /* Poll keyboard device and feed input to NSH stdin */
-
-  if (g_kbd_fd >= 0 && has_input(g_kbd_fd))
-    {
-      ret = read(g_kbd_fd, buf, sizeof(buf) - 1);
-      if (ret <= 0)
-        {
-          close(g_kbd_fd);
-          g_kbd_fd = -1;
-        }
-      else
-        {
-          int i;
-
-          for (i = 0; i < ret; i++)
-            {
-              char ch = buf[i];
-
-              if (ch == '\r' || ch == '\n')
-                {
-                  /* Send buffered line to NSH stdin */
-
-                  if (g_kbd_line_len > 0)
-                    {
-                      write(g_nsh_stdin[WRITE_PIPE], g_kbd_line,
-                            g_kbd_line_len);
-                    }
-
-                  write(g_nsh_stdin[WRITE_PIPE], "\n", 1);
-                  term_label_append(ui_TerminalOutput, "\n");
-                  g_kbd_line_len = 0;
-                }
-              else if (ch == 0x7f || ch == 0x08)
-                {
-                  /* Backspace */
-
-                  if (g_kbd_line_len > 0)
-                    {
-                      g_kbd_line_len--;
-                      term_backspace(ui_TerminalOutput);
-                    }
-                }
-              else if (ch >= 0x20 && ch <= 0x7e)
-                {
-                  /* Printable character */
-
-                  if (g_kbd_line_len < (int)sizeof(g_kbd_line) - 1)
-                    {
-                      g_kbd_line[g_kbd_line_len++] = ch;
-                    }
-
-                  term_label_append(ui_TerminalOutput,
-                                       (const char[]){ch, '\0'});
-                }
-            }
-
           term_scroll_bottom(ui_TerminalOutput);
+        }
+
+      /* Retry opening keyboard device if not yet available */
+
+      if (g_kbd_fd < 0)
+        {
+          g_kbd_fd = open(CONFIG_EXAMPLES_MY_LVGL_KBD_DEVPATH, O_RDONLY);
+          if (g_kbd_fd >= 0)
+            {
+              _warn("Keyboard device %s opened (deferred)\n",
+                    CONFIG_EXAMPLES_MY_LVGL_KBD_DEVPATH);
+            }
+        }
+
+      /* Poll keyboard device and feed input to NSH stdin */
+
+      if (g_kbd_fd >= 0 && has_input(g_kbd_fd))
+        {
+          ret = read(g_kbd_fd, buf, sizeof(buf) - 1);
+          if (ret <= 0)
+            {
+              close(g_kbd_fd);
+              g_kbd_fd = -1;
+            }
+          else
+            {
+              int i;
+
+              for (i = 0; i < ret; i++)
+                {
+                  char ch = buf[i];
+
+                  if (ch == '\r' || ch == '\n')
+                    {
+                      /* Send buffered line to NSH stdin */
+
+                      if (g_kbd_line_len > 0)
+                        {
+                          write(g_nsh_stdin[WRITE_PIPE], g_kbd_line,
+                                g_kbd_line_len);
+                        }
+
+                      write(g_nsh_stdin[WRITE_PIPE], "\n", 1);
+                      term_label_append(ui_TerminalOutput, "\n");
+                      g_kbd_line_len = 0;
+                    }
+                  else if (ch == 0x7f || ch == 0x08)
+                    {
+                      /* Backspace */
+
+                      if (g_kbd_line_len > 0)
+                        {
+                          g_kbd_line_len--;
+                          term_backspace(ui_TerminalOutput);
+                        }
+                    }
+                  else if (ch >= 0x20 && ch <= 0x7e)
+                    {
+                      /* Printable character */
+
+                      if (g_kbd_line_len < (int)sizeof(g_kbd_line) - 1)
+                        {
+                          g_kbd_line[g_kbd_line_len++] = ch;
+                        }
+
+                      term_label_append(ui_TerminalOutput,
+                                           (const char[]){ch, '\0'});
+                    }
+                }
+
+              term_scroll_bottom(ui_TerminalOutput);
+            }
         }
     }
 }

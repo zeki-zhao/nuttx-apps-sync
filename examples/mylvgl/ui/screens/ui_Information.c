@@ -73,11 +73,8 @@ static void load_version_info(void)
  * Timer: check for .bin files every 1s
  ****************************************************************************/
 
-static void check_update_dir(lv_timer_t *timer)
+static void refresh_update_buttons(void)
 {
-    if (lv_scr_act() != ui_Information)
-        return;
-
     bool have_nuttx   = false;
     DIR *dir = opendir(UPDATE_DIR);
     if (dir)
@@ -93,7 +90,6 @@ static void check_update_dir(lv_timer_t *timer)
 
     bool enable = have_nuttx && !g_upgrade_busy;
 
-    /* Update button */
     lv_obj_set_style_bg_color(ui_btnUpdate,
         enable ? lv_color_hex(0xFF8800) : lv_color_hex(0x999999),
         LV_PART_MAIN);
@@ -101,6 +97,14 @@ static void check_update_dir(lv_timer_t *timer)
         lv_obj_add_flag(ui_btnUpdate, LV_OBJ_FLAG_CLICKABLE);
     else
         lv_obj_remove_flag(ui_btnUpdate, LV_OBJ_FLAG_CLICKABLE);
+}
+
+static void check_update_dir(lv_timer_t *timer)
+{
+    if (lv_scr_act() != ui_Information)
+        return;
+
+    refresh_update_buttons();
 }
 
 static void refresh_uptime(lv_timer_t *timer)
@@ -189,6 +193,9 @@ void ui_Information_screen_init(void)
     /* Timer: check for update .bin files every 1s */
     ui_update_timer = lv_timer_create(check_update_dir, 1000, NULL);
     lv_timer_create(refresh_uptime, 10, NULL);
+
+    /* Immediate refresh on entry */
+    refresh_update_buttons();
 }
 
 /****************************************************************************

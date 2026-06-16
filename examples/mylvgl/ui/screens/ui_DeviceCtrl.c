@@ -136,6 +136,9 @@ void ui_DeviceCtrl_screen_init(void)
 
         lv_obj_t *lbl = lv_label_create(key);
         lv_label_set_text(lbl, note_names[i]);
+        lv_obj_set_width(lbl, key_w);
+        lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_set_style_text_color(lbl, lv_color_hex(0x000000), LV_PART_MAIN);
         lv_obj_center(lbl);
 
         lv_obj_add_event_cb(key, piano_press_cb, LV_EVENT_PRESSED, (void *)(uintptr_t)i);

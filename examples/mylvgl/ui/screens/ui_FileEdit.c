@@ -72,25 +72,25 @@ void ui_FileEdit_screen_init(void)
     lv_obj_center(label);
 
     ui_TextArea3 = lv_textarea_create(ui_FileEdit);
-    lv_obj_set_width(ui_TextArea3, 363);
-    lv_obj_set_height(ui_TextArea3, 140);
-    lv_obj_set_x(ui_TextArea3, -149);
-    lv_obj_set_y(ui_TextArea3, -100);
+    lv_obj_set_width(ui_TextArea3, 540);
+    lv_obj_set_height(ui_TextArea3, 230);
+    lv_obj_set_x(ui_TextArea3, -20);
+    lv_obj_set_y(ui_TextArea3, -110);
     lv_obj_set_align(ui_TextArea3, LV_ALIGN_CENTER);
     lv_textarea_set_placeholder_text(ui_TextArea3, "Input word...");
 
     ui_Keyboard2 = lv_keyboard_create(ui_FileEdit);
-    lv_obj_set_width(ui_Keyboard2, 555);
-    lv_obj_set_height(ui_Keyboard2, 120);
-    lv_obj_set_x(ui_Keyboard2, -63);
-    lv_obj_set_y(ui_Keyboard2, 60);
+    lv_obj_set_width(ui_Keyboard2, 780);
+    lv_obj_set_height(ui_Keyboard2, 230);
+    lv_obj_set_x(ui_Keyboard2, 0);
+    lv_obj_set_y(ui_Keyboard2, 130);
     lv_obj_set_align(ui_Keyboard2, LV_ALIGN_CENTER);
 
     ui_Button7 = lv_button_create(ui_FileEdit);
     lv_obj_set_width(ui_Button7, 100);
-    lv_obj_set_height(ui_Button7, 50);
-    lv_obj_set_x(ui_Button7, 305);
-    lv_obj_set_y(ui_Button7, 70);
+    lv_obj_set_height(ui_Button7, 60);
+    lv_obj_set_x(ui_Button7, 320);
+    lv_obj_set_y(ui_Button7, -100);
     lv_obj_set_align(ui_Button7, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_Button7, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_remove_flag(ui_Button7, LV_OBJ_FLAG_SCROLLABLE);      /// Flags

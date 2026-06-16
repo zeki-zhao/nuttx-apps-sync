@@ -6,6 +6,7 @@
 #include <mqueue.h>
 #include <sys/stat.h>
 #include <stddef.h>
+#include <syslog.h>
 
 #include "led_handler.h"
 #include <arch/board/board_paths.h>
@@ -88,28 +89,15 @@ void set_led_handler(const struct lvgl_msg_s *msg)
 void save_led_status_handler(const struct lvgl_msg_s *msg)
 {
     char path[128];
-
-    mkdir(SD_STATE_DIR, 0777);
-    snprintf(path, sizeof(path), SD_STATE_DIR "/" FILE_NAME);
-    FILE *fp = fopen(path, "rb+");
+    snprintf(path, sizeof(path), SPI_FLASH_DEVICE_STATUS_DIR "/" FILE_NAME);
+    mkdir(SPI_FLASH_DEVICE_STATUS_DIR, 0777);
+    FILE *fp = fopen(path, "w");
     if (fp) {
-        /* File exists — update only led_state */
-        fseek(fp, offsetof(device_file_t, led_state), SEEK_SET);
-        fwrite(g_led_file.led_state, 1, sizeof(g_led_file.led_state), fp);
+        fwrite(&g_led_file, 1, sizeof(g_led_file), fp);
         fclose(fp);
-        printf("Saved: %s\n", path);
+        syslog(LOG_NOTICE,"Saved: %s\n", path);
     } else {
-        /* File doesn't exist — create and write entire struct */
-        fp = fopen(path, "w");
-        if (fp) {
-            fwrite(&g_led_file, 1, sizeof(g_led_file), fp);
-            fclose(fp);
-            printf("Created: %s\n", path);
-        } else {
-            printf("ERROR: Failed to create %s: %d\n", path, errno);
-        }
+        syslog(LOG_NOTICE,"ERROR: Failed to create %s: %d\n", path, errno);
     }
-
-
 
 }

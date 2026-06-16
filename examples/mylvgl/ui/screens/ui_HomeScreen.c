@@ -163,10 +163,21 @@ void ui_HomeScreen_screen_init(void)
     lv_obj_set_style_radius(ui_btnToScreen2, 10, LV_PART_MAIN);
     add_label_to_btn(ui_btnToScreen2, "Modbus Slave");
 
+    // Music Player button (3rd position)
+    ui_btnToScreen5 = lv_button_create(ui_HomeScreen);
+    lv_obj_set_width(ui_btnToScreen5, 160);
+    lv_obj_set_height(ui_btnToScreen5, 60);
+    lv_obj_align(ui_btnToScreen5, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(ui_btnToScreen5, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_btnToScreen5, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_btnToScreen5, 10, LV_PART_MAIN);
+    add_label_to_btn(ui_btnToScreen5, "Music Player");
+
+    // File Edit button
     ui_btnToScreen3 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen3, 160);
     lv_obj_set_height(ui_btnToScreen3, 60);
-    lv_obj_align(ui_btnToScreen3, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_align(ui_btnToScreen3, LV_ALIGN_CENTER, 0, 50);
     lv_obj_set_style_bg_color(ui_btnToScreen3, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen3, 10, LV_PART_MAIN);
@@ -176,21 +187,11 @@ void ui_HomeScreen_screen_init(void)
     ui_btnToScreen4 = lv_button_create(ui_HomeScreen);
     lv_obj_set_width(ui_btnToScreen4, 160);
     lv_obj_set_height(ui_btnToScreen4, 60);
-    lv_obj_align(ui_btnToScreen4, LV_ALIGN_CENTER, 0, 50);
+    lv_obj_align(ui_btnToScreen4, LV_ALIGN_CENTER, 0, 100);
     lv_obj_set_style_bg_color(ui_btnToScreen4, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_btnToScreen4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_btnToScreen4, 10, LV_PART_MAIN);
     add_label_to_btn(ui_btnToScreen4, "File Browser");
-
-    // Music Player button
-    ui_btnToScreen5 = lv_button_create(ui_HomeScreen);
-    lv_obj_set_width(ui_btnToScreen5, 160);
-    lv_obj_set_height(ui_btnToScreen5, 60);
-    lv_obj_align(ui_btnToScreen5, LV_ALIGN_CENTER, 0, 100);
-    lv_obj_set_style_bg_color(ui_btnToScreen5, lv_color_hex(0x3AACB7), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_btnToScreen5, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui_btnToScreen5, 10, LV_PART_MAIN);
-    add_label_to_btn(ui_btnToScreen5, "Music Player");
 
     // Information button at bottom
     ui_btnToInformation = lv_button_create(ui_HomeScreen);
