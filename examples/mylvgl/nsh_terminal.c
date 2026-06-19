@@ -47,7 +47,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define TIMER_PERIOD_MS     100
+#define TIMER_PERIOD_MS      20
 #define READ_PIPE            0
 #define WRITE_PIPE           1
 #define NSH_TASK            "nsh"
@@ -157,7 +157,7 @@ static void remove_escape_codes(FAR char *buf, int len)
 static void term_timer_callback(lv_timer_t *timer)
 {
   int ret;
-  static char buf[64];
+  static char buf[512];
   bool new_output = false;
   bool active = (lv_scr_act() == ui_Terminal);
 
@@ -185,19 +185,18 @@ static void term_timer_callback(lv_timer_t *timer)
         }
     }
 
-  /* Trim output to prevent unbounded growth / redraw slowdown */
-
-  trim_textarea(ui_TerminalOutput);
-
-  /* UI updates (scroll + keyboard) only when terminal is the active screen */
+  /* UI updates (scroll + trim + keyboard) only when terminal is
+   * the active screen.  trim_textarea is placed here (not outside
+   * the block) because lv_label_set_text inside it invalidates the
+   * entire label area — doing so unconditionally every timer tick
+   * would merge with keyboard button invalidation and slow down
+   * the button-press visual feedback. */
 
   if (active)
     {
-      /* Only scroll to bottom when new output was actually added,
-       * otherwise the user's manual scroll-up would be overridden. */
-
       if (new_output)
         {
+          trim_textarea(ui_TerminalOutput);
           term_scroll_bottom(ui_TerminalOutput);
         }
 
@@ -391,6 +390,10 @@ int nsh_terminal_init(void)
 
   {
     posix_spawn_file_actions_t actions;
+    posix_spawnattr_t attr;
+
+    posix_spawnattr_init(&attr);
+    posix_spawnattr_setstacksize(&attr, 4096);
 
     posix_spawn_file_actions_init(&actions);
     posix_spawn_file_actions_adddup2(&actions,
@@ -400,8 +403,9 @@ int nsh_terminal_init(void)
     posix_spawn_file_actions_adddup2(&actions,
                                      g_nsh_stderr[WRITE_PIPE], 2);
 
-    ret = posix_spawn(&pid, NSH_TASK, &actions, NULL,
+    ret = posix_spawn(&pid, NSH_TASK, &actions, &attr,
                       g_nsh_argv, NULL);
+    posix_spawnattr_destroy(&attr);
 
     posix_spawn_file_actions_destroy(&actions);
   }
