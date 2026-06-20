@@ -24,7 +24,7 @@ if(CONFIG_BOOT_NXBOOT)
   nuttx_add_library(nxboot)
   set(SRCS loader/boot.c loader/flash.c)
 
-  if(BOOT_NXBOOT)
+  if(CONFIG_NXBOOT_BOOTLOADER)
     nuttx_add_application(NAME nxboot_loader SRCS nxboot_main.c
                           INCLUDE_DIRECTORIES include)
   endif()

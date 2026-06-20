@@ -807,13 +807,6 @@ int nsh_loginscript(FAR struct nsh_vtbl_s *vtbl);
  * available:
  */
 
-/* Architecture-specific initialization depends on boardctl(BOARDIOC_INIT) */
-
-#if defined(CONFIG_NSH_ARCHINIT) && !defined(CONFIG_BOARDCTL)
-#  warning CONFIG_NSH_ARCHINIT is set, but CONFIG_BOARDCTL is not
-#  undef CONFIG_NSH_ARCHINIT
-#endif
-
 /* The mkrd command depends on boardctl(BOARDIOC_MKRD) */
 
 #if !defined(CONFIG_BOARDCTL) || !defined(CONFIG_BOARDCTL_MKRD)
@@ -969,6 +962,12 @@ int cmd_irqinfo(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv);
 
 #ifndef CONFIG_NSH_DISABLE_CAT
   int cmd_cat(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv);
+#endif
+#if defined(CONFIG_FS_PERMISSION) && !defined(CONFIG_NSH_DISABLE_CHMOD)
+  int cmd_chmod(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv);
+#endif
+#if defined(CONFIG_FS_PERMISSION) && !defined(CONFIG_NSH_DISABLE_CHOWN)
+  int cmd_chown(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv);
 #endif
 #ifndef CONFIG_NSH_DISABLE_CP
   int cmd_cp(FAR struct nsh_vtbl_s *vtbl, int argc, FAR char **argv);

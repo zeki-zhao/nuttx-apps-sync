@@ -124,6 +124,11 @@ static const char *progress_msgs[] =
  ****************************************************************************/
 
 #ifdef CONFIG_NXBOOT_PROGRESS
+
+void __attribute__((weak)) board_indicate(int msg)
+{
+}
+
 void nxboot_progress(int type, ...)
 {
 #ifdef CONFIG_NXBOOT_PRINTF_PROGRESS
@@ -136,6 +141,7 @@ void nxboot_progress(int type, ...)
       case nxboot_info:
         {
           int idx = va_arg(arg, int);
+          board_indicate(idx);
           assert(progress_msgs[idx]);
           if (strlen(progress_msgs[idx]) == 0)
             {
@@ -149,6 +155,7 @@ void nxboot_progress(int type, ...)
       case nxboot_error:
         {
           int idx = va_arg(arg, int);
+          board_indicate(idx);
           assert(progress_msgs[idx]);
           if (strlen(progress_msgs[idx]) == 0)
             {
@@ -162,6 +169,7 @@ void nxboot_progress(int type, ...)
       case nxboot_progress_start:
         {
           int idx = va_arg(arg, int);
+          board_indicate(idx);
           assert(progress_msgs[idx]);
           if (strlen(progress_msgs[idx]) == 0)
             {
@@ -216,6 +224,7 @@ void nxboot_progress(int type, ...)
 #endif
       case nxboot_progress_end:
         {
+          board_indicate(-1);
           assert(g_progress_started);
           if (!g_progress_started)
             {
@@ -264,16 +273,10 @@ int main(int argc, FAR char *argv[])
   FAR struct boardioc_reset_cause_s cause;
 #endif
 
-#if defined(CONFIG_BOARDCTL) && !defined(CONFIG_NSH_ARCHINIT)
-  /* Perform architecture-specific initialization (if configured) */
-
-  boardctl(BOARDIOC_INIT, 0);
-
 #ifdef CONFIG_BOARDCTL_FINALINIT
   /* Perform architecture-specific final-initialization (if configured) */
 
   boardctl(BOARDIOC_FINALINIT, 0);
-#endif
 #endif
 
   syslog(LOG_INFO, "*** nxboot ***\n");

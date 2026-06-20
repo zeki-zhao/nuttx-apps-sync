@@ -28,18 +28,36 @@ void ui_init(void)
 {
     lv_disp_t * dispp = lv_display_get_default();
     lv_theme_t * theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED),
-                                               true, LV_FONT_DEFAULT);
+                                               false, LV_FONT_DEFAULT);
     lv_disp_set_theme(dispp, theme);
-    ui_Screen1_screen_init();
-    ui_Screen2_screen_init();
-    ui_Screen3_screen_init();
+    ui_HomeScreen_screen_init();
+    ui_DeviceCtrl_screen_init();
+    ui_ModbusSlave_screen_init();
+    ui_FileEdit_screen_init();
+    ui_FileExplorer_screen_init();
+    ui_MusicPlayer_screen_init();
+    ui_Information_screen_init();
     ui____initial_actions0 = lv_obj_create(NULL);
-    lv_disp_load_scr(ui_Screen1);
+
+    lv_color_t white = lv_color_hex(0xFFFFFF);
+    lv_obj_set_style_bg_color(ui_HomeScreen, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_DeviceCtrl, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_ModbusSlave, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_FileEdit, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_FileExplorer, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_MusicPlayer, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_Information, white, LV_PART_MAIN);
+
+    lv_disp_load_scr(ui_HomeScreen);
 }
 
 void ui_destroy(void)
 {
-    ui_Screen1_screen_destroy();
-    ui_Screen2_screen_destroy();
-    ui_Screen3_screen_destroy();
+    ui_HomeScreen_screen_destroy();
+    ui_DeviceCtrl_screen_destroy();
+    ui_ModbusSlave_screen_destroy();
+    ui_FileEdit_screen_destroy();
+    ui_FileExplorer_screen_destroy();
+    ui_MusicPlayer_screen_destroy();
+    ui_Information_screen_destroy();
 }

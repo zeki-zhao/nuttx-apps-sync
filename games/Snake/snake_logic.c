@@ -218,6 +218,7 @@ static void* changeDir(void *arg)
                 break;
         }
     }
+    return NULL;
 }
 
 static void Snake_draw_rectangle(NXEGWINDOW *hwnd,int16_t x1,int16_t y1,int16_t x2, int16_t y2, uint16_t color)
@@ -268,19 +269,6 @@ static void addNode(int16_t s16Direction)
     new->next = NULL;           //新节点的下一个节点指向为NULL
     tail->next = new;           //尾部的下一个节点指向新节点
     tail = new;                 //新节点复制给尾部节点
-}
-
-static int fbopen(const char * device)
-{
-  int fb = open(device, O_RDWR);
-
-  if (fb < 0)
-    {
-      fprintf(stderr, "Unable to open framebuffer device: %s\n", device);
-      return EXIT_FAILURE;
-    }
-
-  return fb;
 }
 
 

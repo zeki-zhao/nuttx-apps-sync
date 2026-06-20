@@ -11,7 +11,7 @@ menuconfig GRAPHICS_LVGL
 
 if GRAPHICS_LVGL
 
-# Kconfig file for LVGL v9.2.1
+# Kconfig file for LVGL v9.2.2
 
 menu "LVGL configuration"
 

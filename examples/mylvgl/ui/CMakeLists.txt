@@ -1,9 +1,14 @@
-SET(SOURCES screens/ui_Screen1.c
-    screens/ui_Screen2.c
-    screens/ui_Screen3.c
+SET(SOURCES screens/ui_HomeScreen.c
+    screens/ui_DeviceCtrl.c
+    screens/ui_ModbusSlave.c
+    screens/ui_FileEdit.c
+    screens/ui_Terminal.c
+    screens/ui_FileExplorer.c
+    screens/ui_MusicPlayer.c
+    screens/ui_Information.c
     ui.c
-    components/ui_comp_hook.c
     ui_helpers.c
     ui_events.c)
 
 nuttx_add_library(ui ${SOURCES})
+target_include_directories(ui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)

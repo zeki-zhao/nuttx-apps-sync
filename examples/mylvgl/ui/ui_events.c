@@ -5,22 +5,36 @@
 
 #include "ui.h"
 #include <stdio.h>
-#include <errno.h>
-#include "../lvgl_event.h"
+#include "../led_handler.h"
+
+static void led_sync_one(lv_obj_t *sw, int idx)
+{
+    if (g_led_file.led_state[0] & (1 << idx))
+        lv_obj_add_state(sw, LV_STATE_CHECKED);
+    else
+        lv_obj_clear_state(sw, LV_STATE_CHECKED);
+}
 
 void Led1Change(lv_event_t * e)
 {
-	lvgl_event_send_toggle_led(1);
+    lvgl_event_send_set_led(1, lv_obj_has_state(ui_Switch1, LV_STATE_CHECKED));
 }
 
 void Led2Change(lv_event_t * e)
 {
-	lvgl_event_send_toggle_led(2);
+    lvgl_event_send_set_led(2, lv_obj_has_state(ui_Switch2, LV_STATE_CHECKED));
 }
 
 void Led3Change(lv_event_t * e)
 {
-    lvgl_event_send_toggle_led(3);
+    lvgl_event_send_set_led(3, lv_obj_has_state(ui_Switch3, LV_STATE_CHECKED));
+}
+
+void led_sync_all(void)
+{
+    led_sync_one(ui_Switch1, 0);
+    led_sync_one(ui_Switch2, 1);
+    led_sync_one(ui_Switch3, 2);
 }
 
 void SaveToSd(lv_event_t * e)

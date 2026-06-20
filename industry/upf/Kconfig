@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menuconfig INDUSTRY_UPF
+	bool "Universal Protocol Framework (UPF)"
+	default n
+	---help---
+		Enable support for the Universal Protocol Framework.
+
+if INDUSTRY_UPF
+
+config UPF_VERSION_MAJOR
+	int "UPF_VERSION_MAJOR"
+	default 1
+
+config UPF_VERSION_MINOR
+	int "UPF_VERSION_MINOR"
+	default 2
+
+config UPF_VERSION_PATCH
+	int "UPF_VERSION_PATCH"
+	default 1
+
+config UPF_DEMO
+	bool "UPF Demo"
+	default n
+	---help---
+		Enable demo programs for UPF, including User and ProtocolInstance modules.
+
+endif # INDUSTRY_UPF

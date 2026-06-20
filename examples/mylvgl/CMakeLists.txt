@@ -34,11 +34,18 @@ if(CONFIG_EXAMPLES_MY_LVGL)
     DEPENDS
     lvgl
     ui
+    upf
+    nxboot
     SRCS
     mylvgl.c
     lvgl_event.c
     led_handler.c
     sd_handler.c
+    modbus_slave.c
+    modbus_slave_instance.c
+    ParameterInfo.c
+    nsh_terminal.c
+    buzzer.c
     INCLUDE_DIRECTORIES
     .
     ui)
