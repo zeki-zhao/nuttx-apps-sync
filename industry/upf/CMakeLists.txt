@@ -66,7 +66,7 @@ if(CONFIG_INDUSTRY_UPF)
   target_sources(upf PRIVATE ${SRCS})
 
   set(UPF_SUBDIRS
-    ${UPF_DIR}/Drivers
+    ${UPF_DIR}/Config
     ${UPF_DIR}/ParameterManager
     ${UPF_DIR}/ProtocolComponents
     ${UPF_DIR}/ProtocolManager)
@@ -80,7 +80,7 @@ if(CONFIG_INDUSTRY_UPF)
   set(NUTTX_UPF_INCDIRS
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/upf
-    ${CMAKE_CURRENT_LIST_DIR}/upf/Drivers
+    ${CMAKE_CURRENT_LIST_DIR}/upf/Config
     ${CMAKE_CURRENT_LIST_DIR}/upf/ParameterManager
     ${CMAKE_CURRENT_LIST_DIR}/upf/ProtocolComponents
     ${CMAKE_CURRENT_LIST_DIR}/upf/ProtocolManager)

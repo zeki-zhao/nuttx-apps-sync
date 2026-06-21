@@ -126,8 +126,9 @@ void modbus_serial_poll(void)
 void modbus_timer_tick(void)
 {
     ProtocolManager_Process(&stProtocolManager_ModbusRtu_Slave);
-    if(ProtocolManager_TryConsumeSendReadyFlag(&stProtocolManager_ModbusRtu_Slave)){
-        write(g_modbus_fd, u8SlaveSendbuf, stProtocolManager_ModbusRtu_Slave.u16SendMsgLength);
+    int32_t u16MsgLength = ProtocolManager_TryConsumeSendReadyFlag(&stProtocolManager_ModbusRtu_Slave);
+    if(u16MsgLength > 0){
+        write(g_modbus_fd, u8SlaveSendbuf, u16MsgLength);
     }
 }
 

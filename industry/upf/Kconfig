@@ -21,12 +21,63 @@ config UPF_VERSION_MINOR
 
 config UPF_VERSION_PATCH
 	int "UPF_VERSION_PATCH"
-	default 1
+	default 3
+		
+config UPF_PROTOCOL_7E
+	bool "UPF Protocol 7E"
+	default n
+	---help---
+		Enable support for the UPF Protocol 7E.
+
+config UPF_PROTOCOL_86
+	bool "UPF Protocol 86"
+	default n
+	---help---
+		Enable support for the UPF Protocol 86.
+
+config UPF_PROTOCOL_MODBUS_RTU
+	bool "UPF Protocol Modbus RTU"
+	default n
+	---help---
+		Enable support for the UPF Protocol Modbus RTU.
+
+config UPF_LOCK_ENABLE
+	bool "Enable lock for RTOS"
+	default n
+	---help---
+		Enable critical section lock macros for RTOS environments.
+		Disable (default) for bare-metal, where LOCK/UNLOCK expand to nothing.
 
 config UPF_DEMO
 	bool "UPF Demo"
 	default n
 	---help---
 		Enable demo programs for UPF, including User and ProtocolInstance modules.
+
+if UPF_DEMO
+
+config UPF_DEMO_ENABLE_7E
+	bool "UPF Demo 7E"
+	default n
+	depends on UPF_PROTOCOL_7E
+	---help---
+		Enable 7E protocol demo.
+
+config UPF_DEMO_ENABLE_86
+	bool "UPF Demo 86"
+	default n
+	depends on UPF_PROTOCOL_86
+	---help---
+		Enable 86 protocol demo.
+
+config UPF_DEMO_ENABLE_MODBUS_RTU
+	bool "UPF Demo Modbus RTU"
+	default n
+	depends on UPF_PROTOCOL_MODBUS_RTU
+	---help---
+		Enable Modbus RTU protocol demo.
+
+endif # UPF_DEMO
+
 
 endif # INDUSTRY_UPF
